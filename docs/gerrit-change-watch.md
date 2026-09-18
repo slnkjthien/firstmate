@@ -1,0 +1,120 @@
+# Gerrit change watch verification
+
+Empirical record for the merge watch on Gerrit, alongside the existing GitHub and GitLab ones.
+It covers what the watch reads, why it reads that field and not a neighbouring one, and why the merge path refuses.
+Every output below is reproduced exactly.
+
+## Versions
+
+```
+$ gerrit-axi --version
+gerrit-axi 0.1.0
+
+$ jq --version
+jq-1.7
+
+$ bash --version | head -1
+GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)
+```
+
+## The evidence changes
+
+The live evidence here reads two changes on a private Gerrit server, so a reader outside that network cannot rerun these commands against the same data.
+What they establish is a property of Gerrit's own record shape rather than of this server, and the hermetic regression in `tests/fm-pr-check-security.test.sh` pins every one of them with no server at all, so the reproducible check is that suite rather than these transcripts.
+Change 186488 is merged, and change 186578 was open and blocked on review when this was collected.
+
+A non-default host appears in the test fixtures only as the placeholder `gerrit.example`, which resolves nowhere.
+That is deliberate: the host-agnostic property belongs to the stored record and the poll's URL reconstruction, so it is demonstrated by inspecting those rather than by reaching any private instance.
+
+## Status is read explicitly, because submittability is a different question
+
+This is the fact the whole adapter turns on, collected 2026-09-18.
+
+```
+$ gerrit-axi show 186488 --host gerrit.spectralink.com --json
+      "change": 186488,
+      "status": "MERGED",
+      "submit": "OK",
+      "submittable": true,
+      "blocked_on": "",
+
+$ gerrit-axi show 186578 --host gerrit.spectralink.com --json
+      "change": 186578,
+      "status": "NEW",
+      "submit": "NOT_READY",
+      "submittable": false,
+      "blocked_on": "Code-Review",
+```
+
+A merged change still reports `submit: OK`, `submittable: true`, and an empty `blocked_on`.
+An open change that has collected its approvals reports exactly the same three fields, because that is what "ready to submit" means.
+So `submit`, `submittable`, and `blocked_on` answer "could this be submitted", and only `status` answers "was it".
+A watch built on any of the first three reports a merge for an approved change nobody has submitted.
+
+`blocked_on` is still the right field for readiness, and vote values are not: Gerrit decides what blocks submission from its own submit requirements, which a caller cannot reconstruct by adding up label values.
+Nothing in this adapter reads readiness, but the distinction is recorded here because the next thing built on this record will want it.
+A new patch set drops both blocking votes, and a rebase is a new patch set, so a readiness reading is only ever true of the patch set it was taken from.
+
+## The host must be passed explicitly
+
+The poll runs from the firstmate home, in no repository.
+Collected 2026-09-18:
+
+```
+$ cd /tmp && gerrit-axi show 186488 --json
+{
+  "ok": false,
+  "op": "show",
+  "error": "cannot determine the Gerrit host",
+  "code": "HOST_UNRESOLVED",
+  "kind": "config",
+```
+
+`gerrit-axi` resolves its server from the current directory's `origin` remote first, so outside a clone it has nothing to reach.
+The poll is silent on every failure, so without `--host` the watch would wait forever on a change it never looked at.
+`bin/fm-pr-poll.sh` therefore passes `--host` from the validated record, and `bin/fm-pr-check.sh` passes the same host when it reads the patch set revision at arming.
+
+## The poll against the real server
+
+Run from `/tmp`, outside any clone, against the published poll program, collected 2026-09-18.
+
+```
+$ bash bin/fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186488 gerrit.spectralink.com spectralink/apps/SlnkDeviceSettings 186488
+merged
+
+$ bash bin/fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186578 gerrit.spectralink.com spectralink/apps/SlnkDeviceSettings 186578
+
+$ bash bin/fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/Other/+/186488 gerrit.spectralink.com spectralink/apps/Other 186488
+
+$ bash bin/fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/999999999 gerrit.spectralink.com spectralink/apps/SlnkDeviceSettings 999999999
+```
+
+The merged change emits one `merged` line.
+The open change, a stored project that does not match the one the server reports, and a change that does not exist all emit nothing.
+
+## The merge path refuses
+
+```
+$ bin/fm-pr-merge.sh task-a https://gerrit.example/c/proj/+/1
+error: firstmate does not submit a Gerrit change: the Gerrit adapter is read-only, because submitting requires an attributed human approval it must not manufacture
+$ echo $?
+2
+```
+
+The refusal runs before any metadata read, forge read, or recorded state.
+Submitting a change means first recording a Code-Review+2, which is a positive attributed claim that a named human approved it, read by colleagues and by any audit of the repository.
+The server permitting self-approval is what makes this a policy boundary rather than a capability limit, which is why it is enforced in the code rather than left to the absence of a provider branch.
+
+## What the hermetic regression pins
+
+`tests/fm-pr-check-security.test.sh` covers, with no server:
+
+- The canonical change URL parses into the provider-tagged identity with its whole nested project path, and an adversarial URL matrix is refused.
+- Only an exact `MERGED` status wakes the watch, and a fully submittable open change does not.
+- A record naming another change, project, or server never wakes the watch, and neither does a doctored sidecar.
+- A merged spelling inside a change's free-text subject cannot forge a status.
+- An absent `gerrit-axi` or `jq` produces no wake, and arming reports the missing tool instead.
+- Arming records the patch set revision as an optional `pr_head` and omits it when the read fails.
+- The merge path refuses a Gerrit change.
+
+Refresh this record by rerunning that suite, and rerun the transcripts above after a `gerrit-axi` upgrade.

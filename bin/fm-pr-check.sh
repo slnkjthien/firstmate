@@ -3,8 +3,9 @@
 # exact pr_head=<sha> when available, then atomically arm a static merge poll.
 # The watcher check source is byte-for-byte bin/fm-pr-poll.sh; task and PR data
 # live only in a private sidecar and are never interpolated into shell source.
-# A GitHub pull request URL and a GitLab merge request URL are both accepted,
-# including a merge request on a self-hosted GitLab instance.
+# A GitHub pull request URL, a GitLab merge request URL, and a Gerrit change URL
+# are all accepted, including a merge request or change on a self-hosted
+# instance.
 # A GitHub pull request the forge reports as a draft is refused, naming the draft
 # state and recording and arming nothing: a draft cannot be merged, so a poll armed on it
 # would wait for an event that cannot occur while nobody is asked to act.
@@ -59,13 +60,26 @@ fm_pr_poll_retirement_recover_one "$STATE" "$ID" "$SCRIPT_DIR/fm-pr-poll.sh" || 
   exit 1
 }
 
-# Refuse to arm a GitLab watch with no glab on PATH. The poll is silent on
+# Refuse to arm a watch with no CLI on PATH to read it. The poll is silent on
 # every error by design, so a missing CLI would be indistinguishable from a
-# merge request that is never merged. Arming is the one point where that can be
+# change that is never merged. Arming is the one point where that can be
 # reported, so the absent tool stops the watch here instead of watching nothing.
+# The Gerrit poll also needs jq, because Gerrit's status has to be read out of a
+# structured record rather than off a rendered line: the tool's own table prints
+# a change's subject before its status, and a subject is free text.
 if [ "$PROVIDER" = gitlab ] && ! command -v glab >/dev/null 2>&1; then
   echo "error: watching a GitLab merge request requires glab on PATH" >&2
   exit 1
+fi
+if [ "$PROVIDER" = gerrit ]; then
+  if ! command -v gerrit-axi >/dev/null 2>&1; then
+    echo "error: watching a Gerrit change requires gerrit-axi on PATH" >&2
+    exit 1
+  fi
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "error: watching a Gerrit change requires jq on PATH" >&2
+    exit 1
+  fi
 fi
 
 # The draft state is read before anything is recorded or armed. Only a positive
@@ -83,7 +97,12 @@ fi
 # pr_head is recorded only when the forge's CLI can supply it. gh exposes the
 # head commit as a selectable field; plain glab exposes it only inside its JSON
 # output, which would need a JSON processor firstmate does not require, so a
-# GitLab task records no pr_head. Both consumers already treat it as optional:
+# GitLab task records no pr_head. Gerrit supplies the current patch set's
+# revision, which is recorded here through the same optional field rather than a
+# second shape: a read that fails leaves it absent exactly as GitLab does.
+# A Gerrit revision is a point-in-time record and goes stale on its own, because
+# every new patch set has a new revision and a rebase is a new patch set.
+# Every consumer already treats the field as optional and as non-authoritative:
 # bin/fm-teardown.sh reads the head from the forge at teardown rather than from
 # metadata and falls back to its provider-agnostic content check, and
 # bin/fm-review-diff.sh resolves the head from the remote when none is recorded.
@@ -93,6 +112,22 @@ WT=$(grep '^worktree=' "$META" | tail -1 | cut -d= -f2- || true)
 PR_HEAD=
 if [ "$PROVIDER" = github ] && [ -n "$WT" ] && [ -d "$WT" ] && command -v gh >/dev/null 2>&1; then
   if REMOTE_HEAD=$(cd "$WT" && gh pr view "$URL" --json headRefOid -q .headRefOid 2>/dev/null) \
+    && fm_pr_head_valid "$REMOTE_HEAD"; then
+    PR_HEAD=$REMOTE_HEAD
+  fi
+fi
+# gerrit-axi needs no clone: the host comes from the validated identity, exactly
+# as the poll passes it, and the record is accepted only when its own change
+# number and URL match what was just parsed.
+if [ "$PROVIDER" = gerrit ]; then
+  if REMOTE_HEAD=$(gerrit-axi show "$NUMBER" --host "$HOST" --json 2>/dev/null \
+    | jq -r --argjson change "$NUMBER" --arg url "$URL" '
+        [.changes[] | select((.change | type) == "number" and .change == $change)] as $match
+        | if ($match | length) == 1 and $match[0].url == $url then
+            $match[0].revision
+          else
+            error("no exact change record")
+          end' 2>/dev/null) \
     && fm_pr_head_valid "$REMOTE_HEAD"; then
     PR_HEAD=$REMOTE_HEAD
   fi
