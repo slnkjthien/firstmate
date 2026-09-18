@@ -14,7 +14,9 @@
 # Still skips (benignly) no-origin projects, missing remotes/branches, and fetch
 # failures. A local-only project is fast-forwarded like any other - the guarded
 # fast-forward is equally safe on a clone firstmate never pushes to - but its
-# branch pruning is skipped; see sync_project.
+# branch pruning is skipped, and a default branch that is strictly AHEAD of
+# origin/<default> is its landed steady state rather than a divergence; see
+# sync_project.
 # A candidate under projects/ must be the root of its own work tree: git discovery
 # walks up, so a plain nested directory would otherwise resolve to the enclosing
 # repository (the firstmate checkout) and be synced under that directory's label.
@@ -420,6 +422,17 @@ sync_project() {
     return 0
   fi
   if ! git -C "$PROJ" merge-base --is-ancestor "$DEFAULT" "$BASE"; then
+    # bin/fm-merge-local.sh lands approved local-only work by fast-forwarding the
+    # clone's own default branch and never pushes, so a local-only default that
+    # contains $BASE and adds to it is that landing's intended end state, not a
+    # divergence: it holds nothing origin would contradict and is zero commits
+    # behind. Anything that has genuinely forked from $BASE - on any posture -
+    # still falls through to the untouched, quantified STUCK report.
+    if [ "$local_only" = yes ] && git -C "$PROJ" merge-base --is-ancestor "$BASE" "$DEFAULT"; then
+      ahead=$(git -C "$PROJ" rev-list --count "$BASE..$DEFAULT" 2>/dev/null) || ahead="?"
+      echo "$label: already current ($ahead local commits ahead of $BASE, never pushed)"
+      return 0
+    fi
     report_stuck "diverged $DEFAULT"
     return 0
   fi

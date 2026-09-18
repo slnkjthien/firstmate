@@ -15,7 +15,10 @@
 # It also pins the local-only posture: such a clone's default branch is
 # fast-forwarded like any other (the guarded fast-forward is equally safe where
 # firstmate never pushes), an unsafe one is reported STUCK and left untouched,
-# and only branch pruning stays skipped for it.
+# and only branch pruning stays skipped for it. A local-only default that is
+# STRICTLY ahead of origin/<default> is the end state of an approved local
+# landing, so it is reported current rather than STUCK; a genuine fork, and an
+# ahead default on any other posture, still reports STUCK as before.
 #
 # It also pins the clone-root guard: a plain directory under projects/ resolves,
 # through git's upward repository discovery, to the ENCLOSING repository - in a
@@ -475,6 +478,65 @@ test_local_only_unsafe_reported_not_forced() {
   pass "an unsafe local-only clone is reported STUCK and left untouched"
 }
 
+# bin/fm-merge-local.sh lands approved local-only work by fast-forwarding the
+# clone's own default branch and never pushing, so a local-only default that is
+# strictly ahead of origin/<default> is that landing's end state - not drift.
+test_local_only_ahead_is_not_stuck() {
+  local home clone out before
+  home=$(new_home)
+  clone=$(build_pair "$home" iotaahead)
+  register_local_only "$home" iotaahead
+  commit_file "$clone" landed.txt landed "locally landed commit"
+  before=$(head_sha "$clone")
+
+  out=$(run_sync "$home" "$clone")
+
+  assert_not_contains "$out" "STUCK" "a locally landed local-only clone is not flagged STUCK"
+  assert_contains "$out" "iotaahead: already current (1 local commits ahead of origin/main, never pushed)" \
+    "the landed state is reported as current and quantified ahead"
+  [ "$(head_sha "$clone")" = "$before" ] \
+    || fail "a locally landed local-only clone must be left untouched, HEAD moved"
+  pass "a local-only clone strictly ahead of origin is not reported STUCK"
+}
+
+# Only STRICTLY ahead is exempt: a local-only default that has genuinely forked
+# from origin/<default> is reported exactly as any other posture's divergence.
+test_local_only_diverged_still_stuck() {
+  local home clone out before
+  home=$(new_home)
+  clone=$(build_pair "$home" iotafork)
+  register_local_only "$home" iotafork
+  commit_file "$clone" local.txt local "local divergent commit"
+  before=$(head_sha "$clone")
+  advance_origin "$home" iotafork C1
+
+  out=$(run_sync "$home" "$clone")
+
+  assert_contains "$out" "iotafork: STUCK: on diverged main, 1 commits behind origin/main - needs attention" \
+    "a genuinely diverged local-only clone still reports STUCK, quantified"
+  [ "$(head_sha "$clone")" = "$before" ] \
+    || fail "a diverged local-only clone must be left untouched, HEAD moved"
+  pass "a genuinely diverged local-only clone is still reported STUCK"
+}
+
+# The ahead exemption is local-only's alone: firstmate pushes to every other
+# posture, so unpushed commits on their default branch remain drift.
+test_non_local_only_ahead_still_stuck() {
+  local home clone out before
+  home=$(new_home)
+  clone=$(build_pair "$home" iotapush)
+  commit_file "$clone" landed.txt landed "unpushed commit"
+  before=$(head_sha "$clone")
+
+  out=$(run_sync "$home" "$clone")
+
+  assert_contains "$out" "iotapush: STUCK: on diverged main" \
+    "an ahead-of-origin normal clone still reports STUCK"
+  [ "$(head_sha "$clone")" = "$before" ] \
+    || fail "an ahead-of-origin normal clone must be left untouched, HEAD moved"
+  pass "a normal clone ahead of origin is still reported STUCK"
+}
+
 test_single_project_by_bare_name_resolves() {
   local home out
   home=$(new_home)
@@ -772,6 +834,9 @@ test_local_only_fast_forwarded
 test_local_only_prune_skipped
 test_non_local_only_still_prunes
 test_local_only_unsafe_reported_not_forced
+test_local_only_ahead_is_not_stuck
+test_local_only_diverged_still_stuck
+test_non_local_only_ahead_still_stuck
 test_single_project_by_bare_name_resolves
 test_single_project_by_bare_name_ignores_cwd_shadow
 test_single_project_by_projects_relative_name_resolves
