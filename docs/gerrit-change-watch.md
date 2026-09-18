@@ -2,7 +2,7 @@
 
 Empirical record for the merge watch on Gerrit, alongside the existing GitHub and GitLab ones.
 It covers what the watch reads, why it reads that field and not a neighbouring one, and why the merge path refuses.
-Every output below is reproduced exactly.
+Every output below is reproduced verbatim except for the server host, project name, and change numbers, which are replaced throughout by the placeholders the test fixtures use.
 
 ## Versions
 
@@ -20,26 +20,24 @@ GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)
 ## The evidence changes
 
 The live evidence here reads two changes on a private Gerrit server, so a reader outside that network cannot rerun these commands against the same data.
-What they establish is a property of Gerrit's own record shape rather than of this server, and the hermetic regression in `tests/fm-pr-check-security.test.sh` pins every one of them with no server at all, so the reproducible check is that suite rather than these transcripts.
-Change 186488 is merged, and change 186578 was open and blocked on review when this was collected.
-
-A non-default host appears in the test fixtures only as the placeholder `gerrit.example`, which resolves nowhere.
-That is deliberate: the host-agnostic property belongs to the stored record and the poll's URL reconstruction, so it is demonstrated by inspecting those rather than by reaching any private instance.
+The server is named below as `review.internal` and its project as `group/apps/console`, the placeholders the fixtures use; every other byte is the tool's own output.
+What these transcripts establish is a property of Gerrit's own record shape rather than of any one server, and the hermetic regression in `tests/fm-pr-check-security.test.sh` pins every one of them with no server at all, so the reproducible check is that suite rather than these transcripts.
+Change 4200 is merged, and change 4201 was open and blocked on review when this was collected.
 
 ## Status is read explicitly, because submittability is a different question
 
 This is the fact the whole adapter turns on, collected 2026-09-18.
 
 ```
-$ gerrit-axi show 186488 --host gerrit.spectralink.com --json
-      "change": 186488,
+$ gerrit-axi show 4200 --host review.internal --json
+      "change": 4200,
       "status": "MERGED",
       "submit": "OK",
       "submittable": true,
       "blocked_on": "",
 
-$ gerrit-axi show 186578 --host gerrit.spectralink.com --json
-      "change": 186578,
+$ gerrit-axi show 4201 --host review.internal --json
+      "change": 4201,
       "status": "NEW",
       "submit": "NOT_READY",
       "submittable": false,
@@ -61,7 +59,7 @@ The poll runs from the firstmate home, in no repository.
 Collected 2026-09-18:
 
 ```
-$ cd /tmp && gerrit-axi show 186488 --json
+$ cd /tmp && gerrit-axi show 4200 --json
 {
   "ok": false,
   "op": "show",
@@ -72,21 +70,21 @@ $ cd /tmp && gerrit-axi show 186488 --json
 
 `gerrit-axi` resolves its server from the current directory's `origin` remote first, so outside a clone it has nothing to reach.
 The poll is silent on every failure, so without `--host` the watch would wait forever on a change it never looked at.
-`bin/fm-pr-poll.sh` therefore passes `--host` from the validated record, and `bin/fm-pr-check.sh` passes the same host when it reads the patch set revision at arming.
+`bin/fm-pr-poll.sh` therefore passes `--host` from the validated record, and `bin/fm-crew-state.sh` reads an open change's status through the same explicit host.
 
 ## The poll against the real server
 
 Run from `/tmp`, outside any clone, against the published poll program, collected 2026-09-18.
 
 ```
-$ bash bin/fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186488 gerrit.spectralink.com spectralink/apps/SlnkDeviceSettings 186488
+$ bash bin/fm-pr-poll.sh --validated gerrit https://review.internal/c/group/apps/console/+/4200 review.internal group/apps/console 4200
 merged
 
-$ bash bin/fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186578 gerrit.spectralink.com spectralink/apps/SlnkDeviceSettings 186578
+$ bash bin/fm-pr-poll.sh --validated gerrit https://review.internal/c/group/apps/console/+/4201 review.internal group/apps/console 4201
 
-$ bash bin/fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/Other/+/186488 gerrit.spectralink.com spectralink/apps/Other 186488
+$ bash bin/fm-pr-poll.sh --validated gerrit https://review.internal/c/group/apps/other/+/4200 review.internal group/apps/other 4200
 
-$ bash bin/fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/999999999 gerrit.spectralink.com spectralink/apps/SlnkDeviceSettings 999999999
+$ bash bin/fm-pr-poll.sh --validated gerrit https://review.internal/c/group/apps/console/+/999999999 review.internal group/apps/console 999999999
 ```
 
 The merged change emits one `merged` line.
@@ -114,7 +112,9 @@ The server permitting self-approval is what makes this a policy boundary rather 
 - A record naming another change, project, or server never wakes the watch, and neither does a doctored sidecar.
 - A merged spelling inside a change's free-text subject cannot forge a status.
 - An absent `gerrit-axi` or `jq` produces no wake, and arming reports the missing tool instead.
-- Arming records the patch set revision as an optional `pr_head` and omits it when the read fails.
+- Arming records no `pr_head`: a Gerrit revision names one patch set, and `bin/fm-review-diff.sh` has no Gerrit path to resolve a current head with, so a recorded revision would quietly become the reviewed content after the next amend.
 - The merge path refuses a Gerrit change.
 
-Refresh this record by rerunning that suite, and rerun the transcripts above after a `gerrit-axi` upgrade.
+`tests/fm-crew-state.test.sh` pins the crew-state read with no server either: a passed run whose change is open reports `PR open`, an abandoned one `PR closed`, a merged one `PR merged`, and an unreadable record or one naming another change reports an honest unknown rather than a merge.
+
+Refresh this record by rerunning those suites, and rerun the transcripts above after a `gerrit-axi` upgrade.

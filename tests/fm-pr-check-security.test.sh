@@ -231,8 +231,8 @@ printf '{"ok":true,"op":"show","count":1,"missing":[],"changes":[{"change":%s,"s
   "${FM_TEST_GERRIT_SUBMIT:-NOT_READY}" \
   "${FM_TEST_GERRIT_SUBMITTABLE:-false}" \
   "${FM_TEST_GERRIT_BLOCKED_ON:-Code-Review}" \
-  "${FM_TEST_GERRIT_REVISION:-5f07a68436929a527ddc7abadc8ef1abceae40ed}" \
-  "${FM_TEST_GERRIT_URL:-https://gerrit.example/c/spectralink/apps/Settings/+/186578}"
+  "5f07a68436929a527ddc7abadc8ef1abceae40ed" \
+  "${FM_TEST_GERRIT_URL:-https://gerrit.example/c/group/apps/console/+/4201}"
 SH
   chmod +x "$fakebin/gh" "$fakebin/gh-axi" "$fakebin/glab" "$fakebin/gerrit-axi"
   : > "$dir/gh.log"
@@ -481,7 +481,7 @@ EOF
     [ -z "$FM_PR_OWNER" ] && [ -z "$FM_PR_REPO" ] \
       || fail "parser set GitHub owner/repository for a Gerrit change URL"
   done <<'EOF'
-https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186578|gerrit.spectralink.com|spectralink/apps/SlnkDeviceSettings|186578
+https://review.internal/c/group/apps/console/+/4201|review.internal|group/apps/console|4201
 https://gerrit.example/c/proj/+/1|gerrit.example|proj|1
 https://gerrit.example.co.uk/c/a/b/c/d/+/42|gerrit.example.co.uk|a/b/c/d|42
 https://review.internal/c/All-Projects/+/123456|review.internal|All-Projects|123456
@@ -1435,14 +1435,14 @@ test_gerrit_merge_watch() {
   local dir state out rc url value notool entry bindir name tool
   dir=$(make_case gerrit-merge-watch)
   state="$dir/home/state"
-  url=https://gerrit.example/c/spectralink/apps/Settings/+/186578
+  url=https://gerrit.example/c/group/apps/console/+/4201
   # The Gerrit branch reads its status with the real jq, and BASE_PATH is
   # deliberately restricted, so this exposes jq explicitly rather than depending
   # on the host keeping it in one of those four directories.
   ln -sf "$REAL_JQ" "$dir/fakebin/jq"
 
   write_poll_meta "$state" task-a "$url"
-  fm_pr_poll_prepare "$state" task-a gerrit "$url" gerrit.example spectralink/apps/Settings 186578 "$POLL" \
+  fm_pr_poll_prepare "$state" task-a gerrit "$url" gerrit.example group/apps/console 4201 "$POLL" \
     || fail "could not prepare a Gerrit poll"
   fm_pr_poll_publish_prepared || fail "could not publish a Gerrit poll"
   fm_pr_poll_artifacts_valid "$state" task-a "$POLL" \
@@ -1450,8 +1450,8 @@ test_gerrit_merge_watch() {
   [ "$(cat "$state/task-a.pr-poll")" = "gerrit
 $url
 gerrit.example
-spectralink/apps/Settings
-186578" ] || fail "published Gerrit sidecar bytes were not exact"
+group/apps/console
+4201" ] || fail "published Gerrit sidecar bytes were not exact"
 
   # Only an exact MERGED status wakes firstmate. Every other reading, including
   # an abandoned change, a lowercase spelling, and a changed format, stays
@@ -1484,13 +1484,13 @@ spectralink/apps/Settings
 
   # A record for some other change can never wake this task's poll, however the
   # server came to return it.
-  out=$(FM_TEST_GERRIT_STATUS=MERGED FM_TEST_GERRIT_CHANGE=186579 run_poll "$dir")
+  out=$(FM_TEST_GERRIT_STATUS=MERGED FM_TEST_GERRIT_CHANGE=4202 run_poll "$dir")
   [ -z "$out" ] || fail "Gerrit poll emitted for another change's record"
   out=$(FM_TEST_GERRIT_STATUS=MERGED \
-    FM_TEST_GERRIT_URL=https://gerrit.example/c/spectralink/apps/Other/+/186578 run_poll "$dir")
+    FM_TEST_GERRIT_URL=https://gerrit.example/c/group/apps/other/+/4201 run_poll "$dir")
   [ -z "$out" ] || fail "Gerrit poll emitted for a record naming another project"
   out=$(FM_TEST_GERRIT_STATUS=MERGED \
-    FM_TEST_GERRIT_URL=https://elsewhere.example/c/spectralink/apps/Settings/+/186578 run_poll "$dir")
+    FM_TEST_GERRIT_URL=https://elsewhere.example/c/group/apps/console/+/4201 run_poll "$dir")
   [ -z "$out" ] || fail "Gerrit poll emitted for a record naming another server"
 
   # A free-text subject carrying the merged spelling and the field separators
@@ -1503,7 +1503,7 @@ spectralink/apps/Settings
   # gerrit-axi resolves its server from the current directory's origin remote
   # first, and the watcher runs in no repository, so the host must be passed
   # explicitly or the tool answers as though the change did not exist.
-  grep -qF -- "show 186578 --host gerrit.example --json" "$dir/gerrit-axi.log" \
+  grep -qF -- "show 4201 --host gerrit.example --json" "$dir/gerrit-axi.log" \
     || fail "Gerrit poll did not address gerrit-axi by change number and explicit host"
   ! grep -qF -- "$url" "$dir/gerrit-axi.log" \
     || fail "Gerrit poll passed a change URL to gerrit-axi"
@@ -1551,15 +1551,15 @@ EOF
 
   # A doctored sidecar cannot redirect the poll: the stored parts must rebuild
   # the stored URL exactly.
-  printf '%s\n%s\n%s\n%s\n%s\n' gerrit "$url" elsewhere.example spectralink/apps/Settings 186578 \
+  printf '%s\n%s\n%s\n%s\n%s\n' gerrit "$url" elsewhere.example group/apps/console 4201 \
     > "$state/task-a.pr-poll"
   out=$(FM_TEST_GERRIT_STATUS=MERGED run_poll "$dir")
   [ -z "$out" ] || fail "Gerrit poll emitted for a sidecar whose host was swapped"
-  printf '%s\n%s\n%s\n%s\n%s\n' gerrit "$url" gerrit.example spectralink/apps/Other 186578 \
+  printf '%s\n%s\n%s\n%s\n%s\n' gerrit "$url" gerrit.example group/apps/other 4201 \
     > "$state/task-a.pr-poll"
   out=$(FM_TEST_GERRIT_STATUS=MERGED run_poll "$dir")
   [ -z "$out" ] || fail "Gerrit poll emitted for a sidecar whose project was swapped"
-  printf '%s\n%s\n%s\n%s\n%s\n' gerrit "$url" gerrit.example spectralink/apps/Settings 186579 \
+  printf '%s\n%s\n%s\n%s\n%s\n' gerrit "$url" gerrit.example group/apps/console 4202 \
     > "$state/task-a.pr-poll"
   out=$(FM_TEST_GERRIT_STATUS=MERGED run_poll "$dir")
   [ -z "$out" ] || fail "Gerrit poll emitted for a sidecar whose change number was swapped"
@@ -1567,9 +1567,11 @@ EOF
   pass "the Gerrit watch wakes only on an explicit merged status and never on submittability"
 }
 
-# Arming records the current patch set's revision through the same optional
-# pr_head field GitLab leaves absent, and never invents a second shape for it.
-test_gerrit_arming_records_the_patch_set_revision() {
+# Arming a Gerrit watch records the canonical change identity and no pr_head.
+# A Gerrit revision names one patch set, and bin/fm-review-diff.sh has no Gerrit
+# path to resolve a current head with, so a recorded revision would quietly
+# become the reviewed content after the next amend.
+test_gerrit_arming_records_no_patch_set_revision() {
   local dir state rc out
   dir=$(make_case gerrit-arming)
   state="$dir/home/state"
@@ -1577,38 +1579,21 @@ test_gerrit_arming_records_the_patch_set_revision() {
 
   write_task_meta "$dir" task-rev
   run_check_entry "$dir" task-rev \
-    https://gerrit.example/c/spectralink/apps/Settings/+/186578 >/dev/null \
+    https://gerrit.example/c/group/apps/console/+/4201 >/dev/null \
     || fail "arming a Gerrit watch failed"
-  grep -qxF 'pr=https://gerrit.example/c/spectralink/apps/Settings/+/186578' "$state/task-rev.meta" \
+  grep -qxF 'pr=https://gerrit.example/c/group/apps/console/+/4201' "$state/task-rev.meta" \
     || fail "arming did not record the canonical Gerrit change URL"
-  grep -qxF 'pr_head=5f07a68436929a527ddc7abadc8ef1abceae40ed' "$state/task-rev.meta" \
-    || fail "arming did not record the patch set revision as pr_head"
-  grep -qF -- '--host gerrit.example' "$dir/gerrit-axi.log" \
-    || fail "arming did not read the revision with an explicit host"
-
-  # A revision read that fails leaves the field absent rather than recording a
-  # guess, exactly as a GitLab arming does, and the watch is still armed.
-  write_task_meta "$dir" task-norev
-  FM_TEST_GERRIT_FAIL=1 run_check_entry "$dir" task-norev \
-    https://gerrit.example/c/spectralink/apps/Settings/+/186579 >/dev/null \
-    || fail "arming a Gerrit watch failed when the revision was unreadable"
-  grep -q '^pr_head=' "$state/task-norev.meta" \
-    && fail "arming recorded a pr_head it could not read"
-  [ -e "$state/task-norev.check.sh" ] || fail "arming left no poll armed without a revision"
-
-  # A record naming another change never supplies this task's revision.
-  write_task_meta "$dir" task-otherrev
-  FM_TEST_GERRIT_CHANGE=999 run_check_entry "$dir" task-otherrev \
-    https://gerrit.example/c/spectralink/apps/Settings/+/186580 >/dev/null \
-    || fail "arming a Gerrit watch failed for a mismatched revision record"
-  grep -q '^pr_head=' "$state/task-otherrev.meta" \
-    && fail "arming recorded another change's revision as pr_head"
+  grep -q '^pr_head=' "$state/task-rev.meta" \
+    && fail "arming recorded a Gerrit patch set revision as pr_head"
+  [ -e "$state/task-rev.check.sh" ] || fail "arming a Gerrit watch left no poll armed"
+  [ ! -s "$dir/gerrit-axi.log" ] \
+    || fail "arming read the forge for a head it does not record"
 
   # Submitting a Gerrit change is refused outright, before anything is read or
   # recorded, rather than left as a silently absent provider branch.
   set +e
   out=$(run_merge_entry "$dir" task-rev \
-    https://gerrit.example/c/spectralink/apps/Settings/+/186578 2>&1)
+    https://gerrit.example/c/group/apps/console/+/4201 2>&1)
   rc=$?
   set -e
   [ "$rc" -ne 0 ] || fail "the merge path accepted a Gerrit change"
@@ -1618,7 +1603,7 @@ test_gerrit_arming_records_the_patch_set_revision() {
   esac
   [ ! -e "$state/task-rev.merge-authority" ] || fail "a refused Gerrit merge recorded merge authority"
 
-  pass "Gerrit arming records an optional patch set revision and the merge path refuses to submit"
+  pass "Gerrit arming records no patch set revision and the merge path refuses to submit"
 }
 
 # The GitLab watch must follow a merge request exactly as the GitHub watch
@@ -3061,7 +3046,7 @@ SH
 test_parser_matrix
 test_gitlab_merge_watch
 test_gerrit_merge_watch
-test_gerrit_arming_records_the_patch_set_revision
+test_gerrit_arming_records_no_patch_set_revision
 test_merged_poll_retires_once
 test_merged_poll_reregistration_after_notification_is_absorbed
 test_merged_poll_retries_a_failed_upward_report

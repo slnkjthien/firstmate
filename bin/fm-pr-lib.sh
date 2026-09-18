@@ -1047,6 +1047,72 @@ FIELDS
   FM_PR_RECORD_MERGED=$merged
 }
 
+# gerrit-axi resolves its server from the current directory's origin remote
+# first, so the host is passed explicitly from the parsed identity and a read
+# outside a clone still reaches the right server. The status is the only field
+# read: a merged change and an approved-but-unsubmitted one report the same
+# submit, submittable, and blocked_on values, so only the status separates them.
+# The record is accepted only when exactly one returned change matches both the
+# stored number and the stored URL, so another project's or server's record can
+# never answer for this change.
+fm_pr_gerrit_read_record() {  # <host> <path> <number>
+  local host=$1 path=$2 number=$3 change_url json fields line
+  local total=0 named=0 state='' merged=''
+  FM_PR_RECORD_STATE=
+  FM_PR_RECORD_MERGED=
+  command -v gerrit-axi >/dev/null 2>&1 || return 1
+  command -v jq >/dev/null 2>&1 || return 1
+  case "$number" in
+    ''|*[!0-9]*) return 1 ;;
+  esac
+  change_url="https://$host/c/$path/+/$number"
+
+  if ! json=$(gerrit-axi show "$number" --host "$host" --json 2>/dev/null) \
+    || [ -z "$json" ]; then
+    return 1
+  fi
+  if ! fields=$(printf '%s' "$json" | jq -r --argjson change "$number" --arg url "$change_url" '
+      if type == "object" and .ok == true and (.changes | type) == "array" then
+        [.changes[] | select((.change | type) == "number" and .change == $change)] as $match
+        | if ($match | length) == 1
+             and $match[0].url == $url
+             and ($match[0].status | type) == "string"
+             and $match[0].status != ""
+          then
+            "state=" + $match[0].status,
+            "merged=" + (if $match[0].status == "MERGED" then "true" else "false" end)
+          else
+            error("no exact change record")
+          end
+      else
+        error("invalid gerrit record")
+      end' 2>/dev/null); then
+    return 1
+  fi
+  while IFS= read -r line; do
+    total=$((total + 1))
+    case "$line" in
+      state=*) state=${line#state=} ;;
+      merged=*) merged=${line#merged=} ;;
+      *) continue ;;
+    esac
+    named=$((named + 1))
+  done <<FIELDS
+$fields
+FIELDS
+  if [ "$named" -ne 2 ] || [ "$total" -ne 2 ] || [ -z "$state" ] \
+    || { [ "$merged" != true ] && [ "$merged" != false ]; }; then
+    return 1
+  fi
+
+  # Consumed by bin/fm-crew-state.sh passed_pr_detail.
+  # shellcheck disable=SC2034
+  FM_PR_RECORD_STATE=$state
+  # Consumed by bin/fm-crew-state.sh passed_pr_detail.
+  # shellcheck disable=SC2034
+  FM_PR_RECORD_MERGED=$merged
+}
+
 fm_pr_poll_retirement_data_valid() {
   local state=$1 id=$2 state_device data data_hash data_identity
   state_device=$(fm_pr_file_device "$state") || return 1

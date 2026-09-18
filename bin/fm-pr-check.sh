@@ -97,37 +97,21 @@ fi
 # pr_head is recorded only when the forge's CLI can supply it. gh exposes the
 # head commit as a selectable field; plain glab exposes it only inside its JSON
 # output, which would need a JSON processor firstmate does not require, so a
-# GitLab task records no pr_head. Gerrit supplies the current patch set's
-# revision, which is recorded here through the same optional field rather than a
-# second shape: a read that fails leaves it absent exactly as GitLab does.
-# A Gerrit revision is a point-in-time record and goes stale on its own, because
-# every new patch set has a new revision and a rebase is a new patch set.
-# Every consumer already treats the field as optional and as non-authoritative:
+# GitLab task records no pr_head, and neither does a Gerrit task: a Gerrit
+# revision names one patch set, every amend or rebase is a new patch set, and
+# bin/fm-review-diff.sh has no Gerrit path to resolve a current head with, so a
+# recorded revision would silently become the reviewed content. Both consumers
+# already treat it as optional:
 # bin/fm-teardown.sh reads the head from the forge at teardown rather than from
 # metadata and falls back to its provider-agnostic content check, and
-# bin/fm-review-diff.sh resolves the head from the remote when none is recorded.
+# bin/fm-review-diff.sh fetches a pull request head from the remote when none is
+# recorded and otherwise diffs the local branch, which is the current content.
 # bin/fm-pr-merge.sh reads a GitLab head live at merge time for the same reason,
 # and treats a recorded value that disagrees as stale rather than authoritative.
 WT=$(grep '^worktree=' "$META" | tail -1 | cut -d= -f2- || true)
 PR_HEAD=
 if [ "$PROVIDER" = github ] && [ -n "$WT" ] && [ -d "$WT" ] && command -v gh >/dev/null 2>&1; then
   if REMOTE_HEAD=$(cd "$WT" && gh pr view "$URL" --json headRefOid -q .headRefOid 2>/dev/null) \
-    && fm_pr_head_valid "$REMOTE_HEAD"; then
-    PR_HEAD=$REMOTE_HEAD
-  fi
-fi
-# gerrit-axi needs no clone: the host comes from the validated identity, exactly
-# as the poll passes it, and the record is accepted only when its own change
-# number and URL match what was just parsed.
-if [ "$PROVIDER" = gerrit ]; then
-  if REMOTE_HEAD=$(gerrit-axi show "$NUMBER" --host "$HOST" --json 2>/dev/null \
-    | jq -r --argjson change "$NUMBER" --arg url "$URL" '
-        [.changes[] | select((.change | type) == "number" and .change == $change)] as $match
-        | if ($match | length) == 1 and $match[0].url == $url then
-            $match[0].revision
-          else
-            error("no exact change record")
-          end' 2>/dev/null) \
     && fm_pr_head_valid "$REMOTE_HEAD"; then
     PR_HEAD=$REMOTE_HEAD
   fi
