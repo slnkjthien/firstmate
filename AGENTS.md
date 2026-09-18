@@ -401,6 +401,11 @@ A captain instruction to merge is explicit authority; `yolo` is the only standin
 For any custom `state/<id>.check.sh` you write yourself, keep it an ordinary single-link mode-`0700` file, print one line only when firstmate should wake, print nothing otherwise, finish before `FM_CHECK_TIMEOUT`, then bind its current bytes with `bin/fm-check-register.sh <id>` before the watcher may execute it.
 Retire a custom check only through `bin/fm-check-unregister.sh <id>` (or `bin/fm-teardown.sh` for a spawned task); never hand-compose an `rm` with `$STATE`/`$ID`.
 
+On a `forge=gerrit` project there is no PR at all: the worker stops at `done: ready in branch fm/<id> - no-mistakes passed, fixes recovered`, and publishing that branch is firstmate's step, never the worker's.
+Take it only on the captain's explicit push authority naming that concrete change, since `yolo` is inactive on this forge, and push the worker's own copy of `fm/<id>` to the review server's `refs/for/` target so the pipeline's recovered fix commits are what reaches review; a branch rebuilt from anywhere else can ship the unfixed code.
+Record the resulting change URL in the backlog item note as that task's landing artifact, relay it to the captain, and hold the task open until a human reviewer approves and submits the change.
+Teardown then follows the ordinary rule and proves landing against the local default ref, so fetch the submitted change into local `main` first: `bin/fm-teardown.sh` has no Gerrit-aware landed proof and otherwise refuses the worktree as unpushed and unlanded.
+
 Tear down a ship task only after landing is confirmed.
 A teardown refusal for uncommitted or unlanded work is a stop-and-investigate result, never an obstacle to bypass.
 Never force teardown without explicit discard authority.

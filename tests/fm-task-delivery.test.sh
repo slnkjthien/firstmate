@@ -885,11 +885,12 @@ EOF
 # orthogonal to the mode: it is read from its own `forge=` token wherever that
 # token sits in the annotation, and it is never derived from the mode. It is also
 # never inferred - only this explicit token binds a project to a forge - so an
-# unrecognized value is reported as no forge and, because merge authority must
-# never be reported for approval semantics this fleet does not know, forces yolo
-# off along with it.
+# unrecognized value resolves to nothing at all: the parser refuses, because a
+# mistyped forge reported as "no registered forge" is exactly how a Gerrit project
+# would receive the pull-request contract the binding exists to prevent. An absent
+# or empty forge value is not a typo and still means no registered forge.
 test_project_mode_binds_the_forge_orthogonally() {
-  local home out err label registry expect n=0
+  local home out err status label registry expect n=0
   home="$TMP_ROOT/forge-binding/home"
   mkdir -p "$home/data"
   while IFS='|' read -r label registry expect; do
@@ -906,6 +907,7 @@ forge as the only token leaves the default mode|- fp [forge=gerrit] - fixture (a
 forge before yolo on a local-only project|- fp [local-only forge=gerrit] - fixture (added 2026-01-01)|local-only off gerrit
 forge under the conditional policy|- fp [no-mistakes-prod-only forge=gerrit] - fixture (added 2026-01-01)|no-mistakes off gerrit
 a forge without gerrit keeps yolo|- fp [direct-PR +yolo] - fixture (added 2026-01-01)|direct-PR on none
+an empty forge value is no registered forge|- fp [no-mistakes +yolo forge=] - fixture (added 2026-01-01)|no-mistakes on none
 ROWS
 
   printf '%s\n' '- fp [no-mistakes-prod-only forge=gerrit] - fixture (added 2026-01-01)' > "$home/data/projects.md"
@@ -917,15 +919,12 @@ ROWS
 
   printf '%s\n' '- fp [no-mistakes +yolo forge=gitlab] - fixture (added 2026-01-01)' > "$home/data/projects.md"
   out=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>/dev/null)
-  [ "$out" = "no-mistakes off none" ] \
-    || fail "an unrecognized forge was not reported as no forge with yolo off (got '$out')"
-  err=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>&1 >/dev/null)
-  assert_contains "$err" 'unknown forge "gitlab"' "an unrecognized forge was accepted silently"
-
-  printf '%s\n' '- fp [no-mistakes +yolo forge=] - fixture (added 2026-01-01)' > "$home/data/projects.md"
-  out=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>/dev/null)
-  [ "$out" = "no-mistakes off none" ] \
-    || fail "an empty forge value was not rejected like any other unknown one (got '$out')"
+  status=$?
+  [ "$status" -ne 0 ] || fail "an unrecognized forge resolved to a posture instead of refusing (got '$out')"
+  [ -z "$out" ] || fail "a refused forge still handed the caller a posture: '$out'"
+  err=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>&1 >/dev/null) || true
+  assert_contains "$err" 'unknown forge "gitlab"' "the refusal did not name the token it could not read"
+  assert_contains "$err" 'forge=gerrit' "the refusal did not name the accepted values"
   pass "fm-project-mode: the forge binds from its own explicit token, orthogonal to mode and yolo"
 }
 
@@ -1078,6 +1077,30 @@ EOF
   pass "fm-spawn: a registered forge must reach the worker's brief, and only the safe direction is advisory"
 }
 
+# The registry is hand-edited markdown, so a one-character typo in the forge token
+# is the likeliest way it goes wrong. Such an entry must stop the spawn with the
+# parser's own reason in front of the operator: resolving it to "no registered
+# forge" would drop every guard at once - yolo, the direct-PR refusal, and the
+# brief agreement - and launch a worker onto a review server with the
+# pull-request contract.
+test_spawn_refuses_a_registry_forge_it_cannot_read() {
+  local rec home proj fakebin out status
+  rec=$(make_home forge-typo "- proj [no-mistakes forge=gerit] - fixture (added 2026-01-01)")
+  IFS='|' read -r home proj fakebin <<EOF
+$rec
+EOF
+  write_brief "$home" forge-typo-a1 no-mistakes
+  out=$(run_spawn "$home" "$fakebin" forge-typo-a1 "$proj" claude --mode no-mistakes --yolo on 2>&1)
+  status=$?
+  [ "$status" -ne 0 ] || fail "a spawn launched on a registry entry whose forge token does not resolve"
+  assert_contains "$out" 'unknown forge "gerit"' \
+    "the parser's refusal never reached the operator running the spawn"
+  assert_contains "$out" "does not resolve to a delivery posture" \
+    "the spawn did not say why it refused to launch"
+  assert_absent "$home/state/forge-typo-a1.meta" "the refused spawn still recorded a task"
+  pass "fm-spawn: a registry forge token the parser refuses stops the launch, reason included"
+}
+
 # Promotion renders the same single owner an ordinary brief does, so a promoted
 # worker on a bound forge must receive that forge's contract rather than the PR
 # one. Promotion decides the mode and yolo itself, but the forge is the project's
@@ -1154,6 +1177,7 @@ test_project_mode_binds_the_forge_orthogonally
 test_forge_gerrit_refuses_yolo
 test_forge_gerrit_changes_what_no_mistakes_means
 test_spawn_requires_the_brief_to_carry_the_registered_forge
+test_spawn_refuses_a_registry_forge_it_cannot_read
 test_promotion_carries_the_forge_binding
 test_spawn_and_promote_require_filled_task_subsections
 echo "# all fm-task-delivery tests passed"

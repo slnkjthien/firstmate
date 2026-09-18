@@ -53,8 +53,11 @@
 #
 # An unknown/missing project or unknown mode falls back to "no-mistakes off none" and
 # warns to stderr, so a typo never silently drops the gate. An unrecognized forge
-# warns and reports yolo=off as well, because merge authority must never be
-# reported for a forge whose approval semantics are unknown.
+# token is REFUSED instead: nothing is printed to stdout and the exit status is 3,
+# naming the bad token and the accepted values. A mistyped forge resolved to "no
+# registered forge" would hand a Gerrit project the pull-request contract this
+# binding exists to prevent, so it fails closed rather than degrading. An absent
+# or empty `forge=` value is not a typo and still means no registered forge.
 # Usage: fm-project-mode.sh [--raw] <project-name>
 set -eu
 
@@ -78,7 +81,8 @@ fi
 
 # awk emits "<mode> <yolo> <forge>" (one line) or nothing if the project is absent.
 # A `forge=` token with an empty value reaches the shell as an empty third field,
-# which the closed-set check below rejects like any other unrecognized value.
+# which the closed-set check below reads as no registered forge, exactly like an
+# annotation carrying no forge token at all.
 parsed=$(awk -v n="$NAME" '
   $1=="-" && $2==n {
     mode="no-mistakes"; yolo="off"; forge="none";
@@ -112,14 +116,15 @@ case "$mode" in
   *) echo "warn: unknown mode \"$mode\" for $NAME; defaulting to no-mistakes off" >&2; mode=no-mistakes; yolo=off ;;
 esac
 case "$yolo" in on|off) ;; *) yolo=off ;; esac
-# Merge authority is never reported for a forge whose approval semantics this
-# fleet does not know, so an unrecognized token also forces yolo off.
+# A forge this fleet does not know is a registry error, not a posture: resolving
+# it to "no registered forge" is how a Gerrit project would quietly receive the
+# pull-request contract, so nothing is reported and the caller is refused.
 case "$forge" in
-  none|gerrit) ;;
+  ""|none) forge=none ;;
+  gerrit) ;;
   *)
-    echo "warn: unknown forge \"$forge\" for $NAME; treating it as no registered forge and reporting yolo=off" >&2
-    forge=none
-    yolo=off ;;
+    echo "refused: unknown forge \"$forge\" registered for $NAME in $REG; the accepted values are forge=gerrit, or no forge token at all for a forge whose pull requests no-mistakes already drives; correct the registry entry" >&2
+    exit 3 ;;
 esac
 if [ "$forge" = gerrit ] && [ "$yolo" = on ]; then
   echo "refused: +yolo is registered for $NAME but yolo is inactive for forge=gerrit, so this reports yolo=off: a Gerrit Code-Review+2 is a positive attributed claim that a named human approved, and firstmate must not manufacture one (captain's decision 2026-09-15)" >&2

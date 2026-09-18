@@ -2792,7 +2792,14 @@ delivery_rigor_rank() { # <mode> -> 3 (most rigor) .. 1 (least); 0 = not a task 
 # drift this contract prevents.
 if [ "$KIND" = ship ]; then
   PROJ_NAME=$(basename "$PROJ_ABS")
-  STANDING_LINE=$("$FM_ROOT/bin/fm-project-mode.sh" --raw "$PROJ_NAME" 2>/dev/null) || STANDING_LINE=
+  # The parser's own diagnostics reach the operator here rather than being
+  # discarded: a registry entry it refuses (an unknown forge token) resolves to no
+  # posture at all, and launching on the silent default is how a mistyped forge
+  # would hand a Gerrit project the pull-request contract below.
+  if ! STANDING_LINE=$("$FM_ROOT/bin/fm-project-mode.sh" --raw "$PROJ_NAME"); then
+    echo "error: $ID cannot launch: the registry entry for $PROJ_NAME does not resolve to a delivery posture (see the refusal above); correct data/projects.md and spawn again" >&2
+    exit 1
+  fi
   STANDING_MODE=
   STANDING_FORGE=none
   if [ -n "$STANDING_LINE" ]; then

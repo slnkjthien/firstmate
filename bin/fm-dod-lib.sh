@@ -369,7 +369,7 @@ You may not report ready until you have closed that gap:
 An unrecovered fix round is an unfinished task, never housekeeping: reporting ready without it is how the UNFIXED code gets published.
 
 When the run's outcome is passed and step 3 holds, append \`done [at=<epoch>]: ready in branch fm/$id - no-mistakes passed, fixes recovered\` and stop. You are finished.
-There is no PR URL and no CI result to report, and publishing this branch for review is not yours to do.
+There is no PR URL and no CI result to report, and publishing this branch for review is not yours to do: firstmate pushes your branch to the review server on the captain's explicit authority, and the task stays open until a human reviewer submits the change.
 EOF
       else
         cat <<EOF
