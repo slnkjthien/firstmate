@@ -928,6 +928,43 @@ ROWS
   pass "fm-project-mode: the forge binds from its own explicit token, orthogonal to mode and yolo"
 }
 
+# The binding is only as strong as the weakest way of mistyping it. A token whose
+# KEY is wrong - one dropped character, a capital, a space instead of the `=` -
+# would otherwise be discarded silently, leaving forge=none and dropping every
+# guard that reads it, which is the same hazard as a wrong forge VALUE. Every
+# unrecognized annotation token therefore refuses with the token named, while an
+# annotation carrying only a mode, `+yolo` and `forge=` still resolves.
+test_project_mode_refuses_an_unrecognized_annotation_token() {
+  local home out err status label registry token n=0
+  home="$TMP_ROOT/forge-token/home"
+  mkdir -p "$home/data"
+  while IFS='|' read -r label registry token; do
+    [ -n "$label" ] || continue
+    n=$((n + 1))
+    printf '%s\n' "$registry" > "$home/data/projects.md"
+    out=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>/dev/null)
+    status=$?
+    [ "$status" -ne 0 ] || fail "$label: resolved to a posture instead of refusing (got '$out')"
+    [ -z "$out" ] || fail "$label: a refused annotation still handed the caller a posture: '$out'"
+    err=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>&1 >/dev/null) || true
+    assert_contains "$err" "unrecognized annotation token \"$token\"" \
+      "$label: the refusal did not name the token it could not read"
+    assert_contains "$err" 'forge=gerrit' "$label: the refusal did not name the accepted set"
+  done <<'ROWS'
+a dropped character in the key|- fp [no-mistakes forg=gerrit] - fixture (added 2026-01-01)|forg=gerrit
+a transposed key|- fp [no-mistakes frge=gerrit] - fixture (added 2026-01-01)|frge=gerrit
+a capitalized key|- fp [no-mistakes Forge=gerrit] - fixture (added 2026-01-01)|Forge=gerrit
+a space instead of the equals sign|- fp [no-mistakes forge gerrit] - fixture (added 2026-01-01)|forge
+the forge value with no key at all|- fp [no-mistakes gerrit] - fixture (added 2026-01-01)|gerrit
+an unknown token beside a valid forge|- fp [no-mistakes forge=gerrit +tomorrow] - fixture (added 2026-01-01)|+tomorrow
+ROWS
+
+  printf '%s\n' '- fp [no-mistakes +yolo forge=gerrit] - fixture (added 2026-01-01)' > "$home/data/projects.md"
+  out=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>/dev/null)
+  [ "$out" = "no-mistakes off gerrit" ] || fail "the accepted token set stopped resolving (got '$out')"
+  pass "fm-project-mode: an annotation token the parser does not recognize is refused, never discarded"
+}
+
 # Yolo is inactive for the Gerrit forge on the captain's decision of 2026-09-15,
 # because a Code-Review+2 is a positive attributed claim that a named human
 # approved. Every path that could carry merge authority to such a project must
@@ -1104,7 +1141,8 @@ EOF
 # Promotion renders the same single owner an ordinary brief does, so a promoted
 # worker on a bound forge must receive that forge's contract rather than the PR
 # one. Promotion decides the mode and yolo itself, but the forge is the project's
-# binding, so it refuses a promotion whose flag contradicts the registry.
+# binding, so promotion takes it from the registry with no flag to remember, and
+# refuses a flag that contradicts it.
 test_promotion_carries_the_forge_binding() {
   local home sendroot meta out payload id status
   home="$TMP_ROOT/forge-promote/home"
@@ -1125,15 +1163,15 @@ STUB
   fill_brief_subsections "$home/data/$id/brief.md" \
     "Fix what the investigation found on the Gerrit project." "Carry over only the fix."
 
-  out=$(FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" "$PROMOTE" "$id" --mode no-mistakes --yolo off 2>&1)
+  out=$(FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" "$PROMOTE" "$id" --mode no-mistakes --yolo off --forge none 2>&1)
   status=$?
-  [ "$status" -ne 0 ] || fail "promotion omitting the registered forge was accepted"
+  [ "$status" -ne 0 ] || fail "promotion contradicting the registered forge was accepted"
   assert_contains "$out" "forge mismatch for $id" "the refusal did not name the drift it caught"
-  assert_contains "$out" "pass --forge gerrit" "the refusal did not say how to correct the promotion"
+  assert_contains "$out" "drop the flag" "the refusal did not say how to correct the promotion"
   grep -qx 'kind=scout' "$meta" || fail "the refused promotion still flipped the task record"
 
-  out=$(FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" "$PROMOTE" "$id" --mode no-mistakes --yolo off --forge gerrit 2>&1) \
-    || fail "promotion carrying the registered forge should succeed"
+  out=$(FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" "$PROMOTE" "$id" --mode no-mistakes --yolo off 2>&1) \
+    || fail "promotion should take the registered forge with no flag to remember"
   payload="$TMP_ROOT/forge-promote/payload"
   ( cd "$sendroot" \
     && FM_TEST_CAPTURE="$payload" \
@@ -1159,7 +1197,7 @@ STUB
   awk '/^# Definition of done$/ { emit=1 } emit' "$payload" > "$TMP_ROOT/forge-promote/delivered-dod"
   cmp -s "$TMP_ROOT/forge-promote/brief-dod" "$TMP_ROOT/forge-promote/delivered-dod" \
     || fail "promotion and ordinary brief generation delivered different gerrit contracts"
-  pass "fm-promote: a promoted worker receives the project's forge contract, and a contradicting flag is refused"
+  pass "fm-promote: a promoted worker receives the project's registered forge contract with no flag to remember"
 }
 
 test_authorized_intent_keeps_words_without_composed_address
@@ -1174,6 +1212,7 @@ test_promote_refuses_a_symlinked_task_record
 test_promotion_delivers_the_real_definition_of_done
 test_project_mode_maps_the_conditional_policy
 test_project_mode_binds_the_forge_orthogonally
+test_project_mode_refuses_an_unrecognized_annotation_token
 test_forge_gerrit_refuses_yolo
 test_forge_gerrit_changes_what_no_mistakes_means
 test_spawn_requires_the_brief_to_carry_the_registered_forge

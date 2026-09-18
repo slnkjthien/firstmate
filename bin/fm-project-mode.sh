@@ -18,7 +18,9 @@
 #   - <name> [<mode> +yolo] - <desc> (added <date>)    -> <mode> on none
 #   - <name> [<mode> forge=gerrit] - <desc> (added <date>) -> <mode> off gerrit
 # `+yolo` and `forge=` are order-independent annotation tokens that may appear
-# together; only the FIRST token is read as the mode.
+# together; only the FIRST token is read as the mode. They are the ONLY tokens an
+# annotation may carry beside that mode: anything else is refused rather than
+# ignored, because a silently dropped `forg=gerrit` binds no forge at all.
 #
 # Registered modes:
 #   no-mistakes            full pipeline -> PR -> configured merge authority (default)
@@ -52,12 +54,15 @@
 # It affects the mode field only.
 #
 # An unknown/missing project or unknown mode falls back to "no-mistakes off none" and
-# warns to stderr, so a typo never silently drops the gate. An unrecognized forge
-# token is REFUSED instead: nothing is printed to stdout and the exit status is 3,
-# naming the bad token and the accepted values. A mistyped forge resolved to "no
-# registered forge" would hand a Gerrit project the pull-request contract this
-# binding exists to prevent, so it fails closed rather than degrading. An absent
-# or empty `forge=` value is not a typo and still means no registered forge.
+# warns to stderr, so a typo never silently drops the gate. An unrecognized
+# annotation token is REFUSED instead - both a `forge=` value outside the closed
+# set and a token the parser does not know at all, such as `forg=gerrit` or a bare
+# `gerrit`: nothing is printed to stdout and the exit status is 3, naming the bad
+# token and the accepted set. A mistyped forge resolved to "no registered forge"
+# would hand a Gerrit project the pull-request contract this binding exists to
+# prevent, so it fails closed rather than degrading. An absent or empty `forge=`
+# value is not a typo and still means no registered forge, and an annotation with
+# no tokens at all keeps the legacy default.
 # Usage: fm-project-mode.sh [--raw] <project-name>
 set -eu
 
@@ -79,10 +84,11 @@ if [ ! -f "$REG" ]; then
   exit 0
 fi
 
-# awk emits "<mode> <yolo> <forge>" (one line) or nothing if the project is absent.
-# A `forge=` token with an empty value reaches the shell as an empty third field,
-# which the closed-set check below reads as no registered forge, exactly like an
-# annotation carrying no forge token at all.
+# awk emits "posture <mode> <yolo> <forge>", "token <bad-token>" for an annotation
+# token it does not recognize, or nothing if the project is absent. A `forge=`
+# token with an empty value reaches the shell as an empty forge field, which the
+# closed-set check below reads as no registered forge, exactly like an annotation
+# carrying no forge token at all.
 parsed=$(awk -v n="$NAME" '
   $1=="-" && $2==n {
     mode="no-mistakes"; yolo="off"; forge="none";
@@ -92,13 +98,13 @@ parsed=$(awk -v n="$NAME" '
       gsub(/^\[|\]$/, "", s);           # strip the surrounding brackets
       k = split(s, a, " ");
       for (j=1; j<=k; j++) {
-        if (a[j]=="+yolo") continue;
+        if (a[j]=="+yolo") { yolo="on"; continue }
         if (a[j] ~ /^forge=/) { forge = substr(a[j], 7); continue }
-        if (j==1 && a[j] != "") mode = a[j];
+        if (j==1) { if (a[j] != "") mode = a[j]; continue }
+        print "token", a[j]; exit
       }
-      for (j=1; j<=k; j++) if (a[j]=="+yolo") yolo="on";
     }
-    print mode, yolo, forge; exit
+    print "posture", mode, yolo, forge; exit
   }
 ' "$REG")
 
@@ -108,9 +114,16 @@ if [ -z "$parsed" ]; then
   exit 0
 fi
 
-read -r mode yolo forge <<EOF
+read -r kind parsed_one parsed_two parsed_three <<EOF
 $parsed
 EOF
+if [ "$kind" = token ]; then
+  echo "refused: unrecognized annotation token \"$parsed_one\" registered for $NAME in $REG; an annotation carries a delivery mode first, then only +yolo and forge=gerrit in any order; correct the registry entry" >&2
+  exit 3
+fi
+mode=$parsed_one
+yolo=$parsed_two
+forge=$parsed_three
 case "$mode" in
   no-mistakes|direct-PR|local-only|no-mistakes-prod-only) ;;
   *) echo "warn: unknown mode \"$mode\" for $NAME; defaulting to no-mistakes off" >&2; mode=no-mistakes; yolo=off ;;
