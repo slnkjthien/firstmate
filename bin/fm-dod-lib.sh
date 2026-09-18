@@ -5,15 +5,26 @@
 # receives. Both paths must hand the worker the same contract: a promoted
 # no-mistakes worker that never received the ask-user escalation rule or the
 # `--yes` ban is the exact delivery hole this single owner exists to close.
-# fm_dod_block <no-mistakes|direct-PR|local-only> <task-id> prints the block on
-# stdout with no trailing blank line. The caller validates the mode; an unknown
-# mode is refused rather than silently rendered as the pipeline contract.
-# The block opens with the fixed machine-readable "Delivery contract: mode=<mode>"
-# line that bin/fm-spawn.sh checks a ship brief against.
+# fm_dod_block <no-mistakes|direct-PR|local-only> <task-id> [<forge>] prints the
+# block on stdout with no trailing blank line. The caller validates the mode; an
+# unknown mode is refused rather than silently rendered as the pipeline contract.
+# The block opens with the fixed machine-readable "Delivery contract: mode=<mode>
+# forge=<forge>" line that bin/fm-spawn.sh checks a ship brief against.
 # The two PR-based blocks require a non-draft pull request before the done
 # report, read back from the forge; a lane that deliberately holds a draft
 # declares a paused wait instead. bin/fm-pr-check.sh refuses to arm merge
 # monitoring on a draft through the same reading bin/fm-pr-merge.sh uses.
+# forge is none|gerrit and defaults to none; bin/fm-project-mode.sh's header owns
+# what the registry binding means and why it is never inferred. This file is the
+# one owner of what forge=gerrit changes for a WORKER: no-mistakes keeps its full
+# review loop but runs with its three forge-facing steps skipped, and the worker
+# must recover the pipeline's own fix commits into its branch before it may
+# report ready. That custody requirement is the whole reason the forge binding is
+# code: a passed run whose fixes stayed in the gate is indistinguishable from one
+# whose fixes arrived, and publishing the first ships the unfixed code.
+# forge=gerrit is a no-op for local-only, whose contract already ends at a ready
+# branch, and is refused for direct-PR, whose entire contract is a pull request
+# the forge does not have.
 # This file is the one owner of the no-mistakes `--intent` contract: only the
 # brief's `## Captain's intent` subsection plus later captain words, never
 # `## Firstmate spec` and never the worker's own tradeoffs.
@@ -42,6 +53,8 @@
 # conflicting role is superseded rather than duplicated.
 # fm_ship_rule_one owns the mode-specific first ship safety rule shared by an
 # ordinary ship brief and the durable contract written during scout promotion.
+# It takes the same optional trailing forge argument, because the rule that keeps
+# a worker off a forge is exactly the rule that changes when the forge does.
 
 fm_brief_worker_role() {  # <state-dir> <task-id>
   local state=$1 task_id=$2
@@ -59,8 +72,32 @@ Project instructions still govern the work wherever they do not conflict with th
 EOF
 }
 
-fm_ship_rule_one() {  # <no-mistakes|direct-PR|local-only> <task-id>
-  local mode=$1 id=$2
+# Closed-set gate shared by every forge-aware renderer, so a caller cannot reach
+# a half-rendered contract. `direct-PR` is refused rather than downgraded: its
+# whole definition of done is a pull request, and a forge without pull requests
+# has no weaker version of it to fall back to.
+fm_forge_valid_for_mode() {  # <forge> <mode> <caller>
+  local forge=$1 mode=$2 caller=$3
+  case "$forge" in
+    none|gerrit) ;;
+    *)
+      echo "error: $caller: unknown forge '$forge' (expected none or gerrit)" >&2
+      return 1 ;;
+  esac
+  if [ "$forge" = gerrit ] && [ "$mode" = direct-PR ]; then
+    echo "error: $caller: forge=gerrit cannot ship mode=direct-PR - that mode's definition of done is a pull request this forge does not have; ship no-mistakes for the review loop, or local-only to stop at a ready branch" >&2
+    return 1
+  fi
+  return 0
+}
+
+fm_ship_rule_one() {  # <no-mistakes|direct-PR|local-only> <task-id> [<forge>]
+  local mode=$1 id=$2 forge=${3:-none}
+  fm_forge_valid_for_mode "$forge" "$mode" fm_ship_rule_one || return 1
+  if [ "$forge" = gerrit ] && [ "$mode" = no-mistakes ]; then
+    printf '%s\n' "1. Never push to any remote and never create a change on the review server. The pipeline reaches your branch through its own local gate, so no push of yours is ever needed; publishing \`fm/$id\` for review is not yours to do, and neither is merging or submitting anything."
+    return 0
+  fi
   case "$mode" in
     direct-PR)
       printf '%s\n' "1. Never push to the default branch (push only your \`fm/$id\` branch). Never merge a PR."
@@ -244,42 +281,13 @@ fm_ask_user_escalation_block() {  # <data-dir> <task-id>
 EOF
 }
 
-fm_dod_block() {  # <mode> <task-id>
-  local mode=$1 id=$2
-  case "$mode" in
-    direct-PR)
-      cat <<EOF
-# Definition of done
-Delivery contract: mode=direct-PR
-This task ships **direct-PR**: you raise the PR yourself, without the no-mistakes pipeline.
-The task is complete only when committed on your branch.
-When it is implemented and committed, push your branch and open a PR with \`gh-axi\` that is ready for review, not a draft.
-Before you report done, read the PR back from the forge and confirm it is not a draft (\`gh pr view <url> --json isDraft\` must print false); if it is a draft, mark it ready with \`gh-axi pr ready\`.
-A draft cannot be merged, so a done report on one leaves the merge unasked.
-Then append \`done [at=<epoch>]: PR {url}\` to the status file and stop.
-If you deliberately keep the PR a draft, append \`paused [at=<epoch>]: {why the draft is held}\` instead of done.
-Do NOT run /no-mistakes. The configured merge authority decides whether to merge the PR; firstmate relays the outcome.
-EOF
-      ;;
-    local-only)
-      cat <<EOF
-# Definition of done
-Delivery contract: mode=local-only
-This task ships **local-only**: no remote, no PR, no pipeline.
-The task is complete only when committed on your branch \`fm/$id\`. Do NOT push, do NOT open a PR, do NOT merge.
-Keep your branch a clean fast-forward onto the current default branch - if \`main\` has advanced, rebase onto it so the eventual merge stays a fast-forward.
-When it is implemented and committed, append \`done [at=<epoch>]: ready in branch fm/$id\` to the status file and stop.
-The configured merge authority approves the ready branch, then firstmate merges it into local \`main\` through the guarded fast-forward path.
-EOF
-      ;;
-    no-mistakes)
-      cat <<EOF
-# Definition of done
-Delivery contract: mode=no-mistakes
-The task is complete only when committed on your branch.
-When you believe it is complete, append \`done [at=<epoch>]: {summary}\` to the status file and stop.
-Firstmate will then instruct you to run /no-mistakes to validate and ship a PR.
-
+# The forge-independent middle of the no-mistakes contract: how a worker drives
+# the pipeline, what `--intent` may carry, and the two firstmate-specific rules.
+# Written once because none of it changes with the forge; only the contract's head
+# (what the mode means and how the run is started) and its tail (what "ready"
+# requires and what is reported) do.
+fm_nm_driving_block() {
+  cat <<EOF
 You drive no-mistakes by responding to its gates, not by implementing fixes.
 Follow the guidance no-mistakes itself provides for the mechanics: it loads when you invoke /no-mistakes, and \`no-mistakes axi run --help\` plus the \`help\` lines in each \`axi\` response are authoritative and version-matched to the installed binary.
 When starting no-mistakes, pass \`--intent\` as only this brief's \`## Captain's intent\` subsection body, not its heading, plus any later words the captain actually said.
@@ -304,12 +312,83 @@ Two firstmate-specific rules layer on top of that guidance:
   When the decision comes back, feed it to the gate with \`no-mistakes axi respond\` and let the pipeline apply it - do not route the question to "the user" or implement the fix yourself.
 - NEVER pass \`--yes\` (or \`-y\`) to \`no-mistakes axi run\` or \`no-mistakes axi respond\`. It is banned fleet-wide.
   It auto-resolves every gate including ask-user findings with no escalation, and answering your own ask-user finding is a hard rule violation.
+EOF
+}
+
+fm_dod_block() {  # <mode> <task-id> [<forge>]
+  local mode=$1 id=$2 forge=${3:-none}
+  fm_forge_valid_for_mode "$forge" "$mode" fm_dod_block || return 1
+  case "$mode" in
+    direct-PR)
+      cat <<EOF
+# Definition of done
+Delivery contract: mode=direct-PR forge=$forge
+This task ships **direct-PR**: you raise the PR yourself, without the no-mistakes pipeline.
+The task is complete only when committed on your branch.
+When it is implemented and committed, push your branch and open a PR with \`gh-axi\` that is ready for review, not a draft.
+Before you report done, read the PR back from the forge and confirm it is not a draft (\`gh pr view <url> --json isDraft\` must print false); if it is a draft, mark it ready with \`gh-axi pr ready\`.
+A draft cannot be merged, so a done report on one leaves the merge unasked.
+Then append \`done [at=<epoch>]: PR {url}\` to the status file and stop.
+If you deliberately keep the PR a draft, append \`paused [at=<epoch>]: {why the draft is held}\` instead of done.
+Do NOT run /no-mistakes. The configured merge authority decides whether to merge the PR; firstmate relays the outcome.
+EOF
+      ;;
+    local-only)
+      cat <<EOF
+# Definition of done
+Delivery contract: mode=local-only forge=$forge
+This task ships **local-only**: no remote, no PR, no pipeline.
+The task is complete only when committed on your branch \`fm/$id\`. Do NOT push, do NOT open a PR, do NOT merge.
+Keep your branch a clean fast-forward onto the current default branch - if \`main\` has advanced, rebase onto it so the eventual merge stays a fast-forward.
+When it is implemented and committed, append \`done [at=<epoch>]: ready in branch fm/$id\` to the status file and stop.
+The configured merge authority approves the ready branch, then firstmate merges it into local \`main\` through the guarded fast-forward path.
+EOF
+      ;;
+    no-mistakes)
+      if [ "$forge" = gerrit ]; then
+        cat <<EOF
+# Definition of done
+Delivery contract: mode=no-mistakes forge=gerrit
+This project's review server has no pull requests and no forge CI the pipeline can watch, so **no-mistakes runs here as a review pass that ends at a ready branch**, not as a gate in front of a remote.
+Pass \`--skip push,pr,ci\` on every \`no-mistakes axi run\` for this task, and skip nothing else: \`review\`, \`test\`, \`document\`, and \`lint\` are the whole point of the run.
+Those three are the only steps that reach a forge, and skipping them is a supported outcome, not a degraded one - the run still finishes \`status: completed\`, \`outcome: passed\`.
+The task is complete only when committed on your branch.
+When you believe it is complete, append \`done [at=<epoch>]: {summary}\` to the status file and stop.
+Firstmate will then instruct you to run /no-mistakes to validate.
+
+EOF
+        fm_nm_driving_block
+        cat <<EOF
+
+Because \`push\` is skipped, the pipeline's fixes DO NOT arrive in your checkout: each fix round commits onto a branch inside no-mistakes' own local gate repository, and with no push nothing carries those commits back to you.
+Your tree never goes dirty and nothing interrupts you, so a passed run whose fixes are still in the gate looks exactly like a passed run whose fixes you already have.
+You may not report ready until you have closed that gap:
+1. After the run reaches its outcome, read \`branch_sync.next_action\` from \`no-mistakes axi status\`.
+2. When its code is \`recover_custody\`, run the exact command that status prints - \`no-mistakes axi sync --recover\` - and confirm \`branch_sync.state\` comes back \`custody_returned\` on a clean tree. The printed command is authoritative if it differs.
+3. Confirm with \`git log\` that \`fm/$id\` now carries every fix commit the run made, whether or not step 2 was needed.
+An unrecovered fix round is an unfinished task, never housekeeping: reporting ready without it is how the UNFIXED code gets published.
+
+When the run's outcome is passed and step 3 holds, append \`done [at=<epoch>]: ready in branch fm/$id - no-mistakes passed, fixes recovered\` and stop. You are finished.
+There is no PR URL and no CI result to report, and publishing this branch for review is not yours to do.
+EOF
+      else
+        cat <<EOF
+# Definition of done
+Delivery contract: mode=no-mistakes forge=$forge
+The task is complete only when committed on your branch.
+When you believe it is complete, append \`done [at=<epoch>]: {summary}\` to the status file and stop.
+Firstmate will then instruct you to run /no-mistakes to validate and ship a PR.
+
+EOF
+        fm_nm_driving_block
+        cat <<EOF
 
 After /no-mistakes reports CI green (the CI-ready return point - do not wait for it to keep monitoring in the background until merge), read the PR back from the forge and confirm it is not a draft (\`gh pr view <url> --json isDraft\` must print false); if it is a draft, mark it ready with \`gh-axi pr ready\`.
 A draft cannot be merged, so a done report on one leaves the merge unasked.
 Then append \`done [at=<epoch>]: PR {url} checks green\` and stop. You are finished.
 If you deliberately keep the PR a draft, append \`paused [at=<epoch>]: {why the draft is held}\` instead of done.
 EOF
+      fi
       ;;
     *)
       echo "error: fm_dod_block: unknown delivery mode '$mode'" >&2

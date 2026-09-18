@@ -207,7 +207,7 @@ test_ship_modes_generate_clean_briefs() {
     brief="$home/data/$id/brief.md"
     assert_present "$brief" "$id: brief was not scaffolded"
     assert_grep "# Definition of done" "$brief" "$id: brief missing Definition of done section"
-    grep -qx "Delivery contract: mode=$mode" "$brief" \
+    grep -qx "Delivery contract: mode=$mode forge=none" "$brief" \
       || fail "$id: brief did not record its machine-readable delivery contract line"
     assert_grep "{TASK}" "$brief" "$id: brief missing the {TASK} placeholder"
     assert_grep "{FIRSTMATE_SPEC}" "$brief" "$id: brief missing the {FIRSTMATE_SPEC} placeholder"
@@ -258,7 +258,7 @@ test_ship_mode_is_explicit_not_registry() {
   FM_HOME="$home" "$ROOT/bin/fm-brief.sh" brief-explicit-a5 direct-proj --mode no-mistakes >/dev/null 2>&1 \
     || fail "explicit no-mistakes brief on a direct-PR project should scaffold"
   brief="$home/data/brief-explicit-a5/brief.md"
-  grep -qx "Delivery contract: mode=no-mistakes" "$brief" \
+  grep -qx "Delivery contract: mode=no-mistakes forge=none" "$brief" \
     || fail "registered direct-PR posture overrode the explicit --mode"
   assert_grep "Firstmate will then instruct you to run /no-mistakes" "$brief" \
     "explicit no-mistakes brief did not render the pipeline definition of done"
@@ -266,7 +266,7 @@ test_ship_mode_is_explicit_not_registry() {
   # An unregistered project is not a blocker either, because nothing is looked up.
   FM_HOME="$home" "$ROOT/bin/fm-brief.sh" brief-explicit-a6 never-registered --mode local-only >/dev/null 2>&1 \
     || fail "unregistered project should still scaffold from the explicit mode"
-  grep -qx "Delivery contract: mode=local-only" "$home/data/brief-explicit-a6/brief.md" \
+  grep -qx "Delivery contract: mode=local-only forge=none" "$home/data/brief-explicit-a6/brief.md" \
     || fail "unregistered project did not honour the explicit --mode"
   pass "fm-brief.sh: the explicit ship mode wins over the registered posture"
 }

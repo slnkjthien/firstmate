@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Resolve a project's REGISTERED delivery posture from the data/projects.md registry.
-# Prints two words to stdout: "<mode> <yolo>" where mode is one of
-# no-mistakes|direct-PR|local-only and yolo is on|off.
+# Prints three words to stdout: "<mode> <yolo> <forge>" where mode is one of
+# no-mistakes|direct-PR|local-only, yolo is on|off, and forge is none|gerrit.
 #
 # MECHANICAL CONSUMERS ONLY. This answers "what posture did the captain register
 # for this project", never "how does this task ship". A task's delivery mode and
@@ -9,12 +9,16 @@
 # bin/fm-brief.sh, bin/fm-spawn.sh, and bin/fm-promote.sh (AGENTS.md section 7).
 # The consumers are bin/fm-fleet-sync.sh (skip local-only clones),
 # bin/fm-home-seed.sh (refuse local-only seeding, run no-mistakes init), and
-# bin/fm-spawn.sh's advisory registry-deviation notice.
+# bin/fm-spawn.sh's advisory registry-deviation notice plus its forge agreement
+# and yolo refusal.
 #
 # Registry line format (data/projects.md):
-#   - <name> - <desc> (added <date>)                  -> no-mistakes off  (legacy default)
-#   - <name> [<mode>] - <desc> (added <date>)          -> <mode> off
-#   - <name> [<mode> +yolo] - <desc> (added <date>)    -> <mode> on
+#   - <name> - <desc> (added <date>)                  -> no-mistakes off none  (legacy default)
+#   - <name> [<mode>] - <desc> (added <date>)          -> <mode> off none
+#   - <name> [<mode> +yolo] - <desc> (added <date>)    -> <mode> on none
+#   - <name> [<mode> forge=gerrit] - <desc> (added <date>) -> <mode> off gerrit
+# `+yolo` and `forge=` are order-independent annotation tokens that may appear
+# together; only the FIRST token is read as the mode.
 #
 # Registered modes:
 #   no-mistakes            full pipeline -> PR -> configured merge authority (default)
@@ -28,12 +32,29 @@
 #                          project as the remote-backed pipeline project it is.
 # yolo (orthogonal) = merge authority only: when on, firstmate merges green,
 #   in-scope work itself (AGENTS.md section 7).
+# forge (orthogonal, and orthogonal to yolo too) = which forge the project's
+#   remote actually is, never inferred from mode, remote name, host, or protocol.
+#   `none` means a forge whose pull requests and checks no-mistakes already
+#   drives, and `gerrit` means a Gerrit server: no pull requests, no forge CI the
+#   pipeline can watch, so no-mistakes runs as a review pass that stops at a
+#   ready branch (bin/fm-dod-lib.sh owns what that changes for a worker).
+#   The binding is EXPLICIT because a provider family must never be guessed;
+#   proposing it from a protocol fact such as port 29418 or a refs/for push
+#   target belongs to project-add intake, not to a use-time lookup.
+#
+# A registered `forge=gerrit` project reports yolo=off with an explicit stderr
+# refusal, on the captain's decision of 2026-09-15: a Gerrit Code-Review+2 is a
+# positive attributed claim that a named human approved, read by colleagues and
+# by any audit, and firstmate must not manufacture one.
 #
 # --raw prints the registered annotation unmapped, so a caller that must tell a
 # conditional policy apart from a flat mode sees "no-mistakes-prod-only" itself.
+# It affects the mode field only.
 #
-# An unknown/missing project or unknown mode falls back to "no-mistakes off" and warns
-# to stderr, so a typo never silently drops the gate.
+# An unknown/missing project or unknown mode falls back to "no-mistakes off none" and
+# warns to stderr, so a typo never silently drops the gate. An unrecognized forge
+# warns and reports yolo=off as well, because merge authority must never be
+# reported for a forge whose approval semantics are unknown.
 # Usage: fm-project-mode.sh [--raw] <project-name>
 set -eu
 
@@ -50,43 +71,63 @@ fi
 NAME=${1:?usage: fm-project-mode.sh [--raw] <project-name>}
 
 if [ ! -f "$REG" ]; then
-  echo "warn: no registry at $REG; defaulting $NAME to no-mistakes off" >&2
-  echo "no-mistakes off"
+  echo "warn: no registry at $REG; defaulting $NAME to no-mistakes off none" >&2
+  echo "no-mistakes off none"
   exit 0
 fi
 
-# awk emits "<mode> <yolo>" (one line) or nothing if the project is absent.
+# awk emits "<mode> <yolo> <forge>" (one line) or nothing if the project is absent.
+# A `forge=` token with an empty value reaches the shell as an empty third field,
+# which the closed-set check below rejects like any other unrecognized value.
 parsed=$(awk -v n="$NAME" '
   $1=="-" && $2==n {
-    mode="no-mistakes"; yolo="off";
+    mode="no-mistakes"; yolo="off"; forge="none";
     if ($3 ~ /^\[/) {
       s="";
       for (i=3; i<=NF; i++) { s = s (s==""?"":" ") $i; if ($i ~ /\]$/) break }
       gsub(/^\[|\]$/, "", s);           # strip the surrounding brackets
       k = split(s, a, " ");
-      if (a[1] != "" && a[1] != "+yolo") mode = a[1];
+      for (j=1; j<=k; j++) {
+        if (a[j]=="+yolo") continue;
+        if (a[j] ~ /^forge=/) { forge = substr(a[j], 7); continue }
+        if (j==1 && a[j] != "") mode = a[j];
+      }
       for (j=1; j<=k; j++) if (a[j]=="+yolo") yolo="on";
     }
-    print mode, yolo; exit
+    print mode, yolo, forge; exit
   }
 ' "$REG")
 
 if [ -z "$parsed" ]; then
-  echo "warn: project \"$NAME\" not in registry; defaulting to no-mistakes off" >&2
-  echo "no-mistakes off"
+  echo "warn: project \"$NAME\" not in registry; defaulting to no-mistakes off none" >&2
+  echo "no-mistakes off none"
   exit 0
 fi
 
-mode=${parsed%% *}
-yolo=${parsed##* }
+read -r mode yolo forge <<EOF
+$parsed
+EOF
 case "$mode" in
   no-mistakes|direct-PR|local-only|no-mistakes-prod-only) ;;
   *) echo "warn: unknown mode \"$mode\" for $NAME; defaulting to no-mistakes off" >&2; mode=no-mistakes; yolo=off ;;
 esac
 case "$yolo" in on|off) ;; *) yolo=off ;; esac
+# Merge authority is never reported for a forge whose approval semantics this
+# fleet does not know, so an unrecognized token also forces yolo off.
+case "$forge" in
+  none|gerrit) ;;
+  *)
+    echo "warn: unknown forge \"$forge\" for $NAME; treating it as no registered forge and reporting yolo=off" >&2
+    forge=none
+    yolo=off ;;
+esac
+if [ "$forge" = gerrit ] && [ "$yolo" = on ]; then
+  echo "refused: +yolo is registered for $NAME but yolo is inactive for forge=gerrit, so this reports yolo=off: a Gerrit Code-Review+2 is a positive attributed claim that a named human approved, and firstmate must not manufacture one (captain's decision 2026-09-15)" >&2
+  yolo=off
+fi
 # A conditional policy is not a task mode. Mechanical callers get its most
 # rigorous leg; --raw callers get the annotation itself (see the header).
 if [ "$RAW" -eq 0 ] && [ "$mode" = no-mistakes-prod-only ]; then
   mode=no-mistakes
 fi
-echo "$mode $yolo"
+echo "$mode $yolo $forge"

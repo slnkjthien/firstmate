@@ -14,7 +14,7 @@
 # charters still use a single `{TASK}` charter fill. Firstmate may adjust other
 # sections when the task genuinely deviates (e.g. working an existing external
 # PR instead of shipping a new one).
-# Usage: fm-brief.sh <task-id> <repo-name> --mode <no-mistakes|direct-PR|local-only> [--herdr-lab]
+# Usage: fm-brief.sh <task-id> <repo-name> --mode <no-mistakes|direct-PR|local-only> [--forge <none|gerrit>] [--herdr-lab]
 #        fm-brief.sh <task-id> <repo-name> --scout [--herdr-lab]
 #        fm-brief.sh <task-id> --secondmate {<project>...|--no-projects}
 #   --scout writes the scout contract instead: the deliverable is a report at
@@ -47,13 +47,23 @@
 #                the configured merge authority approves, firstmate merges to local main
 # no-mistakes-prod-only is a registry policy, not a task mode; resolve it to one of
 # the three concrete modes at intake before calling this script.
-# The generated ship brief records the chosen mode as a fixed machine-readable
-# "Delivery contract: mode=<mode>" line. bin/fm-spawn.sh reads that line and refuses
-# to launch a ship task whose explicit --mode disagrees, so an adjusted brief and the
-# recorded task metadata cannot drift apart.
+# --forge names the project's forge, defaults to none, and is orthogonal to --mode
+# exactly as the registry's `forge=` token is orthogonal to its mode and `+yolo`.
+# It is the captain's explicit registry binding, read from data/projects.md at
+# intake and passed here; this script never infers a forge and never looks the
+# binding up. bin/fm-project-mode.sh's header owns what the binding means, and
+# bin/fm-dod-lib.sh owns what `gerrit` changes for the worker: the no-mistakes
+# review loop runs with its three forge-facing steps skipped and the worker must
+# recover the pipeline's fix commits before it may report a ready branch.
+# The generated ship brief records the chosen mode and forge as a fixed
+# machine-readable "Delivery contract: mode=<mode> forge=<forge>" line.
+# bin/fm-spawn.sh reads that line and refuses to launch a ship task whose explicit
+# --mode disagrees or whose registered forge the brief does not carry, so an
+# adjusted brief and the recorded task delivery cannot drift apart.
 # Ship briefs begin with a worktree-isolation assertion before the branch step.
-# --mode is refused on scout and secondmate scaffolds: a scout's deliverable is a
-# report rather than a merge, and a charter is not a delivery contract.
+# --mode and --forge are refused on scout and secondmate scaffolds: a scout's
+# deliverable is a report rather than a merge, and a charter is not a delivery
+# contract.
 # There is no --yolo flag here. The worker never owns merge decisions, so yolo is
 # a spawn-time and firstmate-side input only (AGENTS.md section 7).
 # Every scaffold's status protocol distinguishes the configured
@@ -142,6 +152,8 @@ HERDR_LAB=0
 NO_PROJECTS=0
 MODE=
 MODE_SET=0
+FORGE=none
+FORGE_SET=0
 POS=()
 want_value=
 for a in "$@"; do
@@ -151,6 +163,7 @@ for a in "$@"; do
     esac
     case "$want_value" in
       mode) MODE=$a; MODE_SET=1 ;;
+      forge) FORGE=$a; FORGE_SET=1 ;;
       *) echo "error: internal parser state for --$want_value" >&2; exit 1 ;;
     esac
     want_value=
@@ -163,6 +176,8 @@ for a in "$@"; do
     --no-projects) NO_PROJECTS=1 ;;
     --mode) want_value=mode ;;
     --mode=*) MODE=${a#--mode=}; MODE_SET=1 ;;
+    --forge) want_value=forge ;;
+    --forge=*) FORGE=${a#--forge=}; FORGE_SET=1 ;;
     # yolo never reaches the worker: it is firstmate's merge authority, not a
     # brief input. Refuse it loudly so it is never silently dropped here and then
     # believed to have been recorded.
@@ -188,6 +203,15 @@ if [ "$KIND" = ship ]; then
   esac
 elif [ "$MODE_SET" -eq 1 ]; then
   echo "error: --mode applies only to ship briefs; a scout delivers a report and a secondmate charter is not a delivery contract" >&2
+  exit 1
+fi
+
+# The forge is validated against the same closed set the renderers enforce, so a
+# typo or an impossible mode/forge pair stops here rather than reaching a worker.
+if [ "$KIND" = ship ]; then
+  fm_forge_valid_for_mode "$FORGE" "$MODE" "fm-brief.sh --forge" || exit 1
+elif [ "$FORGE_SET" -eq 1 ]; then
+  echo "error: --forge applies only to ship briefs; a scout delivers a report and a secondmate charter is not a delivery contract" >&2
   exit 1
 fi
 ID=${POS[0]}
@@ -475,8 +499,9 @@ fi
 # Ship task: shape Setup / Rule 1 by this task's explicit delivery mode, validated
 # above, and render the Definition of done from its single owner, bin/fm-dod-lib.sh,
 # which bin/fm-promote.sh renders too so a promoted scout receives the same contract.
-# The block opens with the fixed "Delivery contract: mode=<mode>" line that
-# bin/fm-spawn.sh checks against its own explicit --mode before launching.
+# The block opens with the fixed "Delivery contract: mode=<mode> forge=<forge>"
+# line that bin/fm-spawn.sh checks against its own explicit --mode and the
+# project's registered forge before launching.
 case "$MODE" in
   direct-PR)
     SETUP2=""
@@ -489,8 +514,8 @@ case "$MODE" in
 2. Run \`no-mistakes doctor\`; if it reports the repo is not initialized here, run \`no-mistakes init\`."
     ;;
 esac
-RULE1=$(fm_ship_rule_one "$MODE" "$ID") || exit 1
-DOD=$(fm_dod_block "$MODE" "$ID") || exit 1
+RULE1=$(fm_ship_rule_one "$MODE" "$ID" "$FORGE") || exit 1
+DOD=$(fm_dod_block "$MODE" "$ID" "$FORGE") || exit 1
 
 cat > "$BRIEF" <<EOF
 You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
@@ -560,4 +585,4 @@ Keep it proportionate: skip \`AGENTS.md\` edits for trivial tasks that produced 
 $DOD
 EOF
 append_brief_include
-echo "scaffolded: $BRIEF (ship, mode=$MODE; replace {TASK} and {FIRSTMATE_SPEC})"
+echo "scaffolded: $BRIEF (ship, mode=$MODE forge=$FORGE; replace {TASK} and {FIRSTMATE_SPEC})"

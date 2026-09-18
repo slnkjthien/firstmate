@@ -338,7 +338,7 @@ STUB
       || fail "$mode: promotion's delivery command did not run"
     assert_present "$payload" "$mode: promotion delivered no message to the worker"
 
-    grep -qx "Delivery contract: mode=$mode" "$payload" \
+    grep -qx "Delivery contract: mode=$mode forge=none" "$payload" \
       || fail "$mode: promoted worker did not receive the machine-readable delivery contract"
     assert_grep "# Definition of done" "$payload" \
       "$mode: promoted worker did not receive a Definition of done"
@@ -412,21 +412,21 @@ test_project_mode_maps_the_conditional_policy() {
 - typoproj [no-mistakez] - fixture (added 2026-01-01)
 EOF
   out=$(FM_HOME="$home" "$PROJECT_MODE" prodproj 2>/dev/null)
-  [ "$out" = "no-mistakes off" ] || fail "conditional policy did not map to its most rigorous leg (got '$out')"
+  [ "$out" = "no-mistakes off none" ] || fail "conditional policy did not map to its most rigorous leg (got '$out')"
   err=$(FM_HOME="$home" "$PROJECT_MODE" prodproj 2>&1 >/dev/null)
   [ -z "$err" ] || fail "a registered conditional policy still warned as unknown: $err"
 
   out=$(FM_HOME="$home" "$PROJECT_MODE" yoloproj 2>/dev/null)
-  [ "$out" = "no-mistakes on" ] || fail "conditional policy dropped its +yolo posture (got '$out')"
+  [ "$out" = "no-mistakes on none" ] || fail "conditional policy dropped its +yolo posture (got '$out')"
 
   out=$(FM_HOME="$home" "$PROJECT_MODE" --raw prodproj 2>/dev/null)
-  [ "$out" = "no-mistakes-prod-only off" ] || fail "--raw did not expose the registered annotation (got '$out')"
+  [ "$out" = "no-mistakes-prod-only off none" ] || fail "--raw did not expose the registered annotation (got '$out')"
 
   out=$(FM_HOME="$home" "$PROJECT_MODE" --raw flatproj 2>/dev/null)
-  [ "$out" = "direct-PR off" ] || fail "--raw altered a flat registered mode (got '$out')"
+  [ "$out" = "direct-PR off none" ] || fail "--raw altered a flat registered mode (got '$out')"
 
   out=$(FM_HOME="$home" "$PROJECT_MODE" typoproj 2>/dev/null)
-  [ "$out" = "no-mistakes off" ] || fail "a typo'd mode no longer falls back to the most rigorous default"
+  [ "$out" = "no-mistakes off none" ] || fail "a typo'd mode no longer falls back to the most rigorous default"
   err=$(FM_HOME="$home" "$PROJECT_MODE" typoproj 2>&1 >/dev/null)
   assert_contains "$err" "unknown mode" "a typo'd registry mode stopped warning"
   pass "fm-project-mode: the conditional policy is accepted, mapped for mechanical callers, and readable raw"
@@ -881,6 +881,264 @@ EOF
   pass "fm-spawn: every legacy worker receives scoped role instructions without changing project or primary instructions"
 }
 
+# The forge binding is orthogonal to the mode and to +yolo, exactly as +yolo is
+# orthogonal to the mode: it is read from its own `forge=` token wherever that
+# token sits in the annotation, and it is never derived from the mode. It is also
+# never inferred - only this explicit token binds a project to a forge - so an
+# unrecognized value is reported as no forge and, because merge authority must
+# never be reported for approval semantics this fleet does not know, forces yolo
+# off along with it.
+test_project_mode_binds_the_forge_orthogonally() {
+  local home out err label registry expect n=0
+  home="$TMP_ROOT/forge-binding/home"
+  mkdir -p "$home/data"
+  while IFS='|' read -r label registry expect; do
+    [ -n "$label" ] || continue
+    n=$((n + 1))
+    printf '%s\n' "$registry" > "$home/data/projects.md"
+    out=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>/dev/null)
+    [ "$out" = "$expect" ] || fail "$label: expected '$expect', got '$out'"
+  done <<'ROWS'
+no annotation at all|- fp - fixture (added 2026-01-01)|no-mistakes off none
+mode only|- fp [direct-PR] - fixture (added 2026-01-01)|direct-PR off none
+forge beside a mode|- fp [no-mistakes forge=gerrit] - fixture (added 2026-01-01)|no-mistakes off gerrit
+forge as the only token leaves the default mode|- fp [forge=gerrit] - fixture (added 2026-01-01)|no-mistakes off gerrit
+forge before yolo on a local-only project|- fp [local-only forge=gerrit] - fixture (added 2026-01-01)|local-only off gerrit
+forge under the conditional policy|- fp [no-mistakes-prod-only forge=gerrit] - fixture (added 2026-01-01)|no-mistakes off gerrit
+a forge without gerrit keeps yolo|- fp [direct-PR +yolo] - fixture (added 2026-01-01)|direct-PR on none
+ROWS
+
+  printf '%s\n' '- fp [no-mistakes-prod-only forge=gerrit] - fixture (added 2026-01-01)' > "$home/data/projects.md"
+  out=$(FM_HOME="$home" "$PROJECT_MODE" --raw fp 2>/dev/null)
+  [ "$out" = "no-mistakes-prod-only off gerrit" ] \
+    || fail "--raw altered the forge while exposing the annotation (got '$out')"
+  err=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>&1 >/dev/null)
+  [ -z "$err" ] || fail "a registered forge warned as unknown: $err"
+
+  printf '%s\n' '- fp [no-mistakes +yolo forge=gitlab] - fixture (added 2026-01-01)' > "$home/data/projects.md"
+  out=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>/dev/null)
+  [ "$out" = "no-mistakes off none" ] \
+    || fail "an unrecognized forge was not reported as no forge with yolo off (got '$out')"
+  err=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>&1 >/dev/null)
+  assert_contains "$err" 'unknown forge "gitlab"' "an unrecognized forge was accepted silently"
+
+  printf '%s\n' '- fp [no-mistakes +yolo forge=] - fixture (added 2026-01-01)' > "$home/data/projects.md"
+  out=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>/dev/null)
+  [ "$out" = "no-mistakes off none" ] \
+    || fail "an empty forge value was not rejected like any other unknown one (got '$out')"
+  pass "fm-project-mode: the forge binds from its own explicit token, orthogonal to mode and yolo"
+}
+
+# Yolo is inactive for the Gerrit forge on the captain's decision of 2026-09-15,
+# because a Code-Review+2 is a positive attributed claim that a named human
+# approved. Every path that could carry merge authority to such a project must
+# say so out loud: the registry parser reports yolo=off with the reason instead of
+# the registered +yolo, and a spawn or promotion asked for it outright refuses.
+test_forge_gerrit_refuses_yolo() {
+  local home out err rec proj fakebin status
+  home="$TMP_ROOT/forge-yolo/home"
+  mkdir -p "$home/data"
+  printf '%s\n' '- fp [no-mistakes +yolo forge=gerrit] - fixture (added 2026-01-01)' > "$home/data/projects.md"
+  out=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>/dev/null)
+  [ "$out" = "no-mistakes off gerrit" ] \
+    || fail "a registered +yolo survived the gerrit forge (got '$out')"
+  err=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>&1 >/dev/null)
+  assert_contains "$err" "refused" "the dropped yolo posture was a silent no-op"
+  assert_contains "$err" "attributed claim that a named human approved" \
+    "the refusal did not carry the reason yolo is inactive for this forge"
+
+  rec=$(make_home forge-yolo-spawn "- proj [no-mistakes forge=gerrit] - fixture (added 2026-01-01)")
+  IFS='|' read -r home proj fakebin <<EOF
+$rec
+EOF
+  FM_HOME="$home" "$BRIEF" forge-yolo-s1 proj --mode no-mistakes --forge gerrit >/dev/null \
+    || fail "a gerrit ship brief should scaffold"
+  fill_brief_subsections "$home/data/forge-yolo-s1/brief.md" \
+    "Run the review loop on the Gerrit project." "Ship the review pass."
+  out=$(run_spawn "$home" "$fakebin" forge-yolo-s1 "$proj" claude --mode no-mistakes --yolo on 2>&1)
+  status=$?
+  [ "$status" -ne 0 ] || fail "a spawn with --yolo on launched on a gerrit-forge project"
+  assert_contains "$out" "--yolo on is refused" "the spawn refusal did not name the refused flag"
+  assert_contains "$out" "attributed claim that a named human approved" \
+    "the spawn refusal did not carry the captain's reason"
+  assert_absent "$home/state/forge-yolo-s1.meta" "the refused spawn still recorded a task"
+
+  out=$(FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" "$PROMOTE" forge-yolo-p1 --mode no-mistakes --yolo on --forge gerrit 2>&1)
+  status=$?
+  [ "$status" -ne 0 ] || fail "a promotion with --yolo on was accepted for the gerrit forge"
+  assert_contains "$out" "--yolo on is refused" "the promotion refusal did not name the refused flag"
+  pass "forge=gerrit: yolo is refused with its reason, never silently dropped"
+}
+
+# The point of binding the forge is that it changes what no-mistakes MEANS for the
+# worker. The brief must carry the per-run skip vocabulary, must keep every step
+# that does the reviewing, must require custody recovery before the worker may
+# report ready, and must end at a ready branch instead of a PR with green checks -
+# while the forge-independent half of the pipeline contract is unchanged.
+test_forge_gerrit_changes_what_no_mistakes_means() {
+  local home brief plain
+  home="$TMP_ROOT/forge-dod/home"
+  mkdir -p "$home/data" "$home/state"
+  FM_HOME="$home" "$BRIEF" forge-dod-g1 review-server-project --mode no-mistakes --forge gerrit >/dev/null \
+    || fail "a gerrit no-mistakes brief should scaffold"
+  brief="$home/data/forge-dod-g1/brief.md"
+  grep -qx "Delivery contract: mode=no-mistakes forge=gerrit" "$brief" \
+    || fail "the brief did not record the machine-readable forge in its delivery contract"
+
+  # shellcheck disable=SC2016 # Backticks are literal generated Markdown.
+  assert_grep 'Pass `--skip push,pr,ci` on every `no-mistakes axi run` for this task' "$brief" \
+    "the worker was not given the skip vocabulary the forge requires"
+  assert_grep 'skip nothing else' "$brief" "nothing stopped the worker skipping the review itself"
+  assert_grep 'branch_sync.next_action' "$brief" \
+    "the worker was not told where to read whether custody must be recovered"
+  assert_grep 'recover_custody' "$brief" "the worker was not told which state requires recovery"
+  assert_grep 'no-mistakes axi sync --recover' "$brief" \
+    "the worker was not given the recovery command"
+  assert_grep 'You may not report ready until you have closed that gap' "$brief" \
+    "custody recovery was offered as advice rather than required before ready"
+  assert_grep 'how the UNFIXED code gets published' "$brief" \
+    "the brief did not say what skipping the recovery actually ships"
+  assert_grep 'done [at=<epoch>]: ready in branch fm/forge-dod-g1' "$brief" \
+    "the gerrit contract did not end at a ready branch"
+  assert_no_grep 'done [at=<epoch>]: PR {url} checks green' "$brief" \
+    "the gerrit contract still demands a PR with green checks this forge cannot produce"
+  assert_grep 'Never push to any remote and never create a change on the review server' "$brief" \
+    "the gerrit worker was not kept off the review server"
+  # shellcheck disable=SC2016 # Backticks are literal generated Markdown.
+  assert_grep 'Run `no-mistakes doctor`' "$brief" \
+    "the gerrit worker lost the pipeline initialization step no-mistakes still needs"
+
+  # The forge changes the contract's head and tail only: how the pipeline is
+  # driven, what --intent may carry, and the two firstmate-specific rules are the
+  # same text a GitHub-forge worker receives.
+  assert_grep 'ask-user findings are never yours to answer: escalate to firstmate' "$brief" \
+    "the gerrit worker lost the ask-user escalation rule"
+  # shellcheck disable=SC2016 # Backticks are literal generated Markdown.
+  assert_grep 'NEVER pass `--yes` (or `-y`)' "$brief" "the gerrit worker lost the --yes ban"
+  FM_HOME="$home" "$BRIEF" forge-dod-n1 other-project --mode no-mistakes >/dev/null \
+    || fail "a default-forge no-mistakes brief should scaffold"
+  plain="$home/data/forge-dod-n1/brief.md"
+  awk '/^You drive no-mistakes by responding to its gates/ { emit = 1 }
+       emit { print }
+       emit && /hard rule violation\.$/ { exit }' "$brief" > "$TMP_ROOT/forge-dod/gerrit-middle"
+  awk '/^You drive no-mistakes by responding to its gates/ { emit = 1 }
+       emit { print }
+       emit && /hard rule violation\.$/ { exit }' "$plain" > "$TMP_ROOT/forge-dod/plain-middle"
+  [ -s "$TMP_ROOT/forge-dod/gerrit-middle" ] || fail "the gerrit brief carries no pipeline-driving section to compare"
+  cmp -s "$TMP_ROOT/forge-dod/gerrit-middle" "$TMP_ROOT/forge-dod/plain-middle" \
+    || fail "the forge changed the forge-independent half of the pipeline contract"
+  pass "forge=gerrit: no-mistakes runs with its forge steps skipped and stops at a recovered ready branch"
+}
+
+# A registered forge is the captain's binding, so the spawn refuses the one
+# direction that is actually dangerous: a Gerrit project launched on a brief that
+# does not carry the forge would tell the worker to open a pull request and report
+# green checks on a server that has neither, which is the hand-written per-brief
+# delivery section this binding replaces. The reverse only stops a worker at a
+# ready branch, so it is announced and allowed like a rigor deviation. A mode
+# whose whole definition of done is a pull request is refused outright.
+test_spawn_requires_the_brief_to_carry_the_registered_forge() {
+  local rec home proj fakebin out status
+  rec=$(make_home forge-agree-gerrit "- proj [no-mistakes forge=gerrit] - fixture (added 2026-01-01)")
+  IFS='|' read -r home proj fakebin <<EOF
+$rec
+EOF
+  write_brief "$home" forge-agree-a1 no-mistakes
+  out=$(run_spawn "$home" "$fakebin" forge-agree-a1 "$proj" claude --mode no-mistakes --yolo off 2>&1)
+  status=$?
+  [ "$status" -ne 0 ] || fail "a gerrit project launched on a brief that records no forge"
+  assert_contains "$out" "forge mismatch for forge-agree-a1" "the refusal did not name the drift it caught"
+  assert_contains "$out" "fm-brief.sh --forge gerrit" "the refusal did not say how to correct the brief"
+  assert_absent "$home/state/forge-agree-a1.meta" "the refused spawn still recorded a task"
+
+  write_brief "$home" forge-agree-a2 direct-PR
+  out=$(run_spawn "$home" "$fakebin" forge-agree-a2 "$proj" claude --mode direct-PR --yolo off 2>&1)
+  status=$?
+  [ "$status" -ne 0 ] || fail "a gerrit project accepted mode=direct-PR"
+  assert_contains "$out" "cannot ship mode=direct-PR" "the refusal did not name the impossible mode"
+
+  FM_HOME="$home" "$BRIEF" forge-agree-a3 proj --mode no-mistakes --forge gerrit >/dev/null \
+    || fail "a gerrit ship brief should scaffold"
+  fill_brief_subsections "$home/data/forge-agree-a3/brief.md" "Run the review loop." "Ship it."
+  out=$(run_spawn "$home" "$fakebin" forge-agree-a3 "$proj" claude --mode no-mistakes --yolo off 2>&1)
+  assert_not_contains "$out" "forge mismatch" "an agreeing brief and registry were reported as drift"
+
+  rec=$(make_home forge-agree-plain "- proj [no-mistakes] - fixture (added 2026-01-01)")
+  IFS='|' read -r home proj fakebin <<EOF
+$rec
+EOF
+  FM_HOME="$home" "$BRIEF" forge-agree-b1 proj --mode no-mistakes --forge gerrit >/dev/null \
+    || fail "a gerrit ship brief should scaffold"
+  fill_brief_subsections "$home/data/forge-agree-b1/brief.md" "Run the review loop." "Ship it."
+  out=$(run_spawn "$home" "$fakebin" forge-agree-b1 "$proj" claude --mode no-mistakes --yolo off 2>&1)
+  assert_contains "$out" "carries no registered forge" \
+    "a forge-bound brief on an unbound project was not announced"
+  assert_not_contains "$out" "forge mismatch" \
+    "the safe direction was refused instead of announced"
+  pass "fm-spawn: a registered forge must reach the worker's brief, and only the safe direction is advisory"
+}
+
+# Promotion renders the same single owner an ordinary brief does, so a promoted
+# worker on a bound forge must receive that forge's contract rather than the PR
+# one. Promotion decides the mode and yolo itself, but the forge is the project's
+# binding, so it refuses a promotion whose flag contradicts the registry.
+test_promotion_carries_the_forge_binding() {
+  local home sendroot meta out payload id status
+  home="$TMP_ROOT/forge-promote/home"
+  sendroot="$TMP_ROOT/forge-promote/sendroot"
+  mkdir -p "$home/state" "$home/data" "$home/projects/proj" "$sendroot/bin"
+  printf '%s\n' '- proj [no-mistakes forge=gerrit] - fixture (added 2026-01-01)' > "$home/data/projects.md"
+  cat > "$sendroot/bin/fm-send.sh" <<'STUB'
+#!/usr/bin/env bash
+printf '%s' "$2" > "$FM_TEST_CAPTURE"
+STUB
+  chmod +x "$sendroot/bin/fm-send.sh"
+
+  id=forge-promote-g1
+  meta="$home/state/$id.meta"
+  printf 'window=fm-%s\nkind=scout\nworktree=/tmp/wt\nproject=%s\n' "$id" "$home/projects/proj" > "$meta"
+  FM_HOME="$home" "$BRIEF" "$id" proj --scout >/dev/null 2>&1 \
+    || fail "scout brief generation should succeed"
+  fill_brief_subsections "$home/data/$id/brief.md" \
+    "Fix what the investigation found on the Gerrit project." "Carry over only the fix."
+
+  out=$(FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" "$PROMOTE" "$id" --mode no-mistakes --yolo off 2>&1)
+  status=$?
+  [ "$status" -ne 0 ] || fail "promotion omitting the registered forge was accepted"
+  assert_contains "$out" "forge mismatch for $id" "the refusal did not name the drift it caught"
+  assert_contains "$out" "pass --forge gerrit" "the refusal did not say how to correct the promotion"
+  grep -qx 'kind=scout' "$meta" || fail "the refused promotion still flipped the task record"
+
+  out=$(FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" "$PROMOTE" "$id" --mode no-mistakes --yolo off --forge gerrit 2>&1) \
+    || fail "promotion carrying the registered forge should succeed"
+  payload="$TMP_ROOT/forge-promote/payload"
+  ( cd "$sendroot" \
+    && FM_TEST_CAPTURE="$payload" \
+       eval "$(printf '%s\n' "$out" | sed -n 's/^next: //p' | grep 'fm-send\.sh')" ) \
+    || fail "promotion's delivery command did not run"
+  assert_present "$payload" "promotion delivered no message to the worker"
+  grep -qx "Delivery contract: mode=no-mistakes forge=gerrit" "$payload" \
+    || fail "the promoted worker did not receive the forge in its delivery contract"
+  # shellcheck disable=SC2016 # Backticks are literal generated Markdown.
+  assert_grep 'Pass `--skip push,pr,ci` on every `no-mistakes axi run` for this task' "$payload" \
+    "the promoted worker was not given the skip vocabulary the forge requires"
+  assert_grep 'You may not report ready until you have closed that gap' "$payload" \
+    "the promoted worker was not required to recover custody before reporting ready"
+  assert_no_grep 'done [at=<epoch>]: PR {url} checks green' "$payload" \
+    "the promoted worker was still told to report a PR with green checks"
+
+  # Both real generation paths must end in the same contract, as they do for every
+  # mode: a promoted worker is never handed a weaker one than a briefed worker.
+  rm "$home/data/$id/brief.md"
+  FM_HOME="$home" "$BRIEF" "$id" proj --mode no-mistakes --forge gerrit >/dev/null 2>&1 \
+    || fail "ordinary gerrit ship brief generation should succeed"
+  awk '/^# Definition of done$/ { emit=1 } emit' "$home/data/$id/brief.md" > "$TMP_ROOT/forge-promote/brief-dod"
+  awk '/^# Definition of done$/ { emit=1 } emit' "$payload" > "$TMP_ROOT/forge-promote/delivered-dod"
+  cmp -s "$TMP_ROOT/forge-promote/brief-dod" "$TMP_ROOT/forge-promote/delivered-dod" \
+    || fail "promotion and ordinary brief generation delivered different gerrit contracts"
+  pass "fm-promote: a promoted worker receives the project's forge contract, and a contradicting flag is refused"
+}
+
 test_authorized_intent_keeps_words_without_composed_address
 test_spawn_refreshes_legacy_worker_roles
 test_ship_spawn_requires_a_valid_delivery_contract
@@ -892,5 +1150,10 @@ test_promote_requires_and_records_the_delivery_contract
 test_promote_refuses_a_symlinked_task_record
 test_promotion_delivers_the_real_definition_of_done
 test_project_mode_maps_the_conditional_policy
+test_project_mode_binds_the_forge_orthogonally
+test_forge_gerrit_refuses_yolo
+test_forge_gerrit_changes_what_no_mistakes_means
+test_spawn_requires_the_brief_to_carry_the_registered_forge
+test_promotion_carries_the_forge_binding
 test_spawn_and_promote_require_filled_task_subsections
 echo "# all fm-task-delivery tests passed"

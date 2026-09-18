@@ -317,6 +317,8 @@ Pass the mode explicitly to the brief, and pass both values explicitly to the sp
 A current explicit captain instruction wins; otherwise the project's registry entry is the captain's standing posture, and dropping below its rigor needs a reason you can state.
 On a `no-mistakes-prod-only` project, classify the task's surface: internal-only tooling, automation, contributor or operator process, and release or submission work ships `direct-PR`, while product-facing, mixed, and uncertain work ships `no-mistakes`; never infer internal-only from file location or project name.
 An unregistered project or absent registry resolves to `no-mistakes` with yolo off, and the registration gap goes to the captain.
+A project's registered `forge=` token is the captain's explicit project fact rather than a per-task choice, so pass it unchanged to the brief and any promotion and never infer one from a remote, host, or protocol.
+On a `forge=gerrit` project `no-mistakes` means the same review loop run with its push, PR, and CI steps skipped, ending at a ready branch the worker has recovered the pipeline's own fix commits into rather than at a PR, and `direct-PR` is refused because that forge has no pull request to open.
 Record the resulting mode, `yolo` merge posture, and the one-line reason for any deviation in the backlog item note.
 
 Treat file or subsystem overlap as a risk signal rather than an automatic reason to wait, and dispatch isolated work immediately with no concurrency cap when each change can be independently implemented and validated and the selected delivery path can reconcile ordinary rebases or conflicts.
@@ -354,8 +356,9 @@ The path's worker, automated gates, and captain approval remain authoritative:
 - **direct-PR** has the worker push and open a PR without the no-mistakes pipeline, then waits for the configured merge authority.
 - **local-only** has the worker stop with a clean ready branch, then waits for the configured merge authority before firstmate uses the guarded fast-forward merge path.
 
-Delivery mode and `yolo` are orthogonal.
+Delivery mode and `yolo` are orthogonal, and a project's registered forge is orthogonal to both.
 `yolo` governs merge authority only: with it off, the captain approves every PR merge and every local-only landing; with it on, firstmate merges green, in-scope work itself.
+`yolo` is inactive on a `forge=gerrit` project and is refused rather than quietly dropped, because a Code-Review+2 is a positive attributed claim that a named human approved and firstmate must not manufacture one.
 Never merge a red PR under either setting unless a current explicit captain instruction names the single GitHub check waived through `fm-pr-merge.sh --allow-red`; that attended-only waiver still requires every other check green.
 Destructive, irreversible, and security-sensitive merges still escalate.
 Without a current explicit captain instruction that states the concrete merge, the green default stands, and standing `yolo` cannot authorize a red merge; section 1 owns when such an instruction overrides a Firstmate-written standing rule within its exact scope.

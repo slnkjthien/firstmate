@@ -52,6 +52,16 @@ The optional `+yolo` posture changes merge authority only and does not change th
 Default it off for every project and every posture, and enable it only on the captain's explicit instruction.
 `AGENTS.md` section 7 owns the merge-authority contract.
 
+The optional `forge=` token records which forge the project's remote actually is.
+It is orthogonal to the mode and to `+yolo`, so it is never derived from any of them, and it is never inferred at use time from a remote name, host, port, or push target.
+Default it absent, which means a forge whose pull requests and checks the no-mistakes pipeline already drives.
+`forge=gerrit` records a Gerrit server: it has no pull requests and no forge CI the pipeline can watch, so `no-mistakes` keeps its whole review loop but runs with its push, PR, and CI steps skipped and ends at a ready branch, `direct-PR` is refused because there is no pull request to open, and `yolo` is inactive there on the captain's decision of 2026-09-15.
+`bin/fm-dod-lib.sh` owns what the binding changes for a worker, including the custody recovery a worker must complete before it may report that branch ready.
+
+Detection is legitimate only here, at add or create intake, and only as a proposal.
+A protocol fact such as an SSH remote on port 29418 or a `refs/for/<branch>` push target is good evidence to propose `forge=gerrit` alongside the posture, and the captain's answer is what binds it.
+Never register the binding from that evidence alone, and never re-derive it later from the clone.
+
 ## Add or clone an existing project
 
 Confirm the source URL, local project name, delivery posture, and autonomy posture, stating the resolved default for each rather than asking the captain to invent one.
