@@ -16,7 +16,11 @@
 # fast-forward is equally safe on a clone firstmate never pushes to - but its
 # branch pruning is skipped, and a default branch that is strictly AHEAD of
 # origin/<default> is its landed steady state rather than a divergence; see
-# sync_project.
+# sync_project. Advancing that default also widens the window in which an
+# approved local-only landing has to be rebased first, because a crewmate branch
+# cut from the older tip is no longer a fast-forward of it. That surfaces as
+# bin/fm-merge-local.sh's ancestor requirement refusing the merge and asking for
+# the rebase; it is deliberately left to that loud, actionable refusal.
 # A candidate under projects/ must be the root of its own work tree: git discovery
 # walks up, so a plain nested directory would otherwise resolve to the enclosing
 # repository (the firstmate checkout) and be synced under that directory's label.
