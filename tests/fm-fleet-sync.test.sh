@@ -492,7 +492,7 @@ test_local_only_ahead_is_not_stuck() {
   out=$(run_sync "$home" "$clone")
 
   assert_not_contains "$out" "STUCK" "a locally landed local-only clone is not flagged STUCK"
-  assert_contains "$out" "iotaahead: already current (1 local commits ahead of origin/main, never pushed)" \
+  assert_contains "$out" "iotaahead: already current (1 local commits ahead of origin/main)" \
     "the landed state is reported as current and quantified ahead"
   [ "$(head_sha "$clone")" = "$before" ] \
     || fail "a locally landed local-only clone must be left untouched, HEAD moved"

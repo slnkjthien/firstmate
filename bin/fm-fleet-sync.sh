@@ -434,7 +434,7 @@ sync_project() {
     # still falls through to the untouched, quantified STUCK report.
     if [ "$local_only" = yes ] && git -C "$PROJ" merge-base --is-ancestor "$BASE" "$DEFAULT"; then
       ahead=$(git -C "$PROJ" rev-list --count "$BASE..$DEFAULT" 2>/dev/null) || ahead="?"
-      echo "$label: already current ($ahead local commits ahead of $BASE, never pushed)"
+      echo "$label: already current ($ahead local commits ahead of $BASE)"
       return 0
     fi
     report_stuck "diverged $DEFAULT"
