@@ -269,9 +269,21 @@ default_checked_out_elsewhere() {
     | grep -Fxq -- "$DEFAULT"
 }
 
+# True when $DEFAULT is strictly ahead of $BASE on a local-only clone, i.e. it
+# contains $BASE and adds to it. bin/fm-merge-local.sh lands approved local-only
+# work by fast-forwarding the clone's own default branch and never pushes, so
+# that is the landing's intended end state rather than a divergence: it holds
+# nothing origin would contradict and is zero commits behind. A default that has
+# genuinely forked from $BASE - on any posture - is not this and stays unsafe.
+default_is_landed_ahead() {
+  [ "$local_only" = yes ] \
+    && git -C "$PROJ" merge-base --is-ancestor "$BASE" "$DEFAULT" 2>/dev/null
+}
+
 local_default_safe_for_recovery() {
   ! git -C "$PROJ" rev-parse --verify --quiet "$DEFAULT^{commit}" >/dev/null \
-    || git -C "$PROJ" merge-base --is-ancestor "$DEFAULT" "$BASE" 2>/dev/null
+    || git -C "$PROJ" merge-base --is-ancestor "$DEFAULT" "$BASE" 2>/dev/null \
+    || default_is_landed_ahead
 }
 
 # Human-readable name for the unsafe state the clone is in, used in the STUCK
@@ -426,15 +438,15 @@ sync_project() {
     return 0
   fi
   if ! git -C "$PROJ" merge-base --is-ancestor "$DEFAULT" "$BASE"; then
-    # bin/fm-merge-local.sh lands approved local-only work by fast-forwarding the
-    # clone's own default branch and never pushes, so a local-only default that
-    # contains $BASE and adds to it is that landing's intended end state, not a
-    # divergence: it holds nothing origin would contradict and is zero commits
-    # behind. Anything that has genuinely forked from $BASE - on any posture -
-    # still falls through to the untouched, quantified STUCK report.
-    if [ "$local_only" = yes ] && git -C "$PROJ" merge-base --is-ancestor "$BASE" "$DEFAULT"; then
+    # Anything that has genuinely forked from $BASE - on any posture - still
+    # falls through to the untouched, quantified STUCK report.
+    if default_is_landed_ahead; then
       ahead=$(git -C "$PROJ" rev-list --count "$BASE..$DEFAULT" 2>/dev/null) || ahead="?"
-      echo "$label: already current ($ahead local commits ahead of $BASE)"
+      if [ "$recovered" = yes ]; then
+        echo "$label: recovered: re-attached $DEFAULT ($ahead local commits ahead of $BASE)"
+      else
+        echo "$label: already current ($ahead local commits ahead of $BASE)"
+      fi
       return 0
     fi
     report_stuck "diverged $DEFAULT"

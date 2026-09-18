@@ -17,8 +17,9 @@
 # firstmate never pushes), an unsafe one is reported STUCK and left untouched,
 # and only branch pruning stays skipped for it. A local-only default that is
 # STRICTLY ahead of origin/<default> is the end state of an approved local
-# landing, so it is reported current rather than STUCK; a genuine fork, and an
-# ahead default on any other posture, still reports STUCK as before.
+# landing, so it is reported current rather than STUCK, and a clean detached
+# HEAD above it still self-heals; a genuine fork, and an ahead default on any
+# other posture, still reports STUCK as before.
 #
 # It also pins the clone-root guard: a plain directory under projects/ resolves,
 # through git's upward repository discovery, to the ENCLOSING repository - in a
@@ -537,6 +538,51 @@ test_non_local_only_ahead_still_stuck() {
   pass "a normal clone ahead of origin is still reported STUCK"
 }
 
+# The one safe drift still self-heals when the local-only default is strictly
+# ahead: re-attaching to a default that CONTAINS origin/<default> strands
+# nothing, so the landed steady state must not be read as a divergence here
+# either - neither in the recovery guard nor in the state label.
+test_local_only_ahead_detached_recovers() {
+  local home clone out landed
+  home=$(new_home)
+  clone=$(build_pair "$home" iotaheal)
+  register_local_only "$home" iotaheal
+  commit_file "$clone" landed.txt landed "locally landed commit"
+  landed=$(git -C "$clone" rev-parse main)
+  git -C "$clone" checkout --detach --quiet HEAD^
+
+  out=$(run_sync "$home" "$clone")
+
+  assert_contains "$out" "iotaheal: recovered: re-attached main (1 local commits ahead of origin/main)" \
+    "the safe re-attach proceeds and reports the landed-ahead state honestly"
+  assert_not_contains "$out" "STUCK" "a landed-ahead local-only clone is never flagged STUCK"
+  assert_not_contains "$out" "diverged" "the landed-ahead default is never labelled diverged"
+  [ "$(git -C "$clone" symbolic-ref --short HEAD 2>/dev/null)" = "main" ] \
+    || fail "expected re-attach to main, HEAD still detached"
+  [ "$(git -C "$clone" rev-parse main)" = "$landed" ] \
+    || fail "the landed commit must survive the re-attach"
+  pass "a local-only clone ahead of origin still self-heals a detached HEAD"
+}
+
+# The recovery exemption is local-only's alone: the same shape on any other
+# posture keeps refusing the re-attach and keeps its diverged label.
+test_non_local_only_ahead_detached_still_stuck() {
+  local home clone out before
+  home=$(new_home)
+  clone=$(build_pair "$home" iotaheld)
+  commit_file "$clone" landed.txt landed "unpushed commit"
+  git -C "$clone" checkout --detach --quiet HEAD^
+  before=$(head_sha "$clone")
+
+  out=$(run_sync "$home" "$clone")
+
+  assert_contains "$out" "iotaheld: STUCK: on detached HEAD (local main diverged from origin/main)" \
+    "a normal clone's ahead default still refuses recovery, with its label"
+  assert_not_contains "$out" "recovered" "a normal clone's ahead default is never re-attached"
+  [ "$(head_sha "$clone")" = "$before" ] || fail "detached HEAD was moved"
+  pass "a normal clone ahead of origin still refuses the detached-HEAD self-heal"
+}
+
 test_single_project_by_bare_name_resolves() {
   local home out
   home=$(new_home)
@@ -837,6 +883,8 @@ test_local_only_unsafe_reported_not_forced
 test_local_only_ahead_is_not_stuck
 test_local_only_diverged_still_stuck
 test_non_local_only_ahead_still_stuck
+test_local_only_ahead_detached_recovers
+test_non_local_only_ahead_detached_still_stuck
 test_single_project_by_bare_name_resolves
 test_single_project_by_bare_name_ignores_cwd_shadow
 test_single_project_by_projects_relative_name_resolves
