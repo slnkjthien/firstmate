@@ -9,8 +9,13 @@
 #   - every other off-default state is left untouched and reported as a loud,
 #     quantified "STUCK: ... N commits behind ... - needs attention" warning
 #     instead of a quiet skip.
-# The pre-existing fast-forward / already-current / local-only / no-origin paths
-# must be unchanged, and bootstrap must relay the new outcomes as FLEET_SYNC lines.
+# The pre-existing fast-forward / already-current / no-origin paths must be
+# unchanged, and bootstrap must relay the new outcomes as FLEET_SYNC lines.
+#
+# It also pins the local-only posture: such a clone's default branch is
+# fast-forwarded like any other (the guarded fast-forward is equally safe where
+# firstmate never pushes), an unsafe one is reported STUCK and left untouched,
+# and only branch pruning stays skipped for it.
 #
 # It also pins the clone-root guard: a plain directory under projects/ resolves,
 # through git's upward repository discovery, to the ENCLOSING repository - in a
@@ -395,19 +400,79 @@ test_no_origin_skipped() {
   pass "no-origin clone is skipped (benign), not flagged STUCK"
 }
 
-test_local_only_skipped() {
+# register_local_only <home> <name>: register <name> as a local-only project in
+# this home's registry, which is what fm-project-mode.sh reads.
+register_local_only() {
+  local home=$1 name=$2
+  mkdir -p "$home/data"
+  printf -- '- %s [local-only] - test project (added 2026-06-27)\n' "$name" \
+    > "$home/data/projects.md"
+}
+
+test_local_only_fast_forwarded() {
   local home clone out
   home=$(new_home)
   clone=$(build_pair "$home" iota)
   advance_origin "$home" iota C1
-  mkdir -p "$home/data"
-  printf -- '- iota [local-only] - test project (added 2026-06-27)\n' > "$home/data/projects.md"
+  register_local_only "$home" iota
 
   out=$(run_sync "$home" "$clone")
 
-  assert_contains "$out" "iota: skipped: local-only project" "local-only clone is skipped as before"
-  assert_not_contains "$out" "STUCK" "local-only skip is not escalated to STUCK"
-  pass "local-only clone is skipped (benign), not flagged STUCK"
+  assert_contains "$out" "iota: synced " "local-only clone is fast-forwarded like any other"
+  assert_not_contains "$out" "skipped" "local-only clone is no longer skipped"
+  [ "$(git -C "$clone" log -1 --format=%s main)" = "C1" ] \
+    || fail "local-only clone's main should now be at C1: $(git -C "$clone" log -1 --format=%s main)"
+  pass "local-only clone's default branch is fast-forwarded"
+}
+
+test_local_only_prune_skipped() {
+  local home clone out
+  home=$(new_home)
+  clone=$(build_packed_prunable "$home" iotaprune)
+  register_local_only "$home" iotaprune
+
+  out=$(run_sync "$home" "$clone")
+
+  assert_contains "$out" "iotaprune: synced " "local-only clone still fast-forwards"
+  assert_not_contains "$out" "pruned" "local-only clone's branches are never pruned"
+  git -C "$clone" rev-parse --verify --quiet refs/heads/feature >/dev/null \
+    || fail "local-only clone's gone-upstream branch 'feature' was pruned but must be kept"
+  pass "local-only clone keeps its gone-upstream branches (pruning stays skipped)"
+}
+
+# The prune-skip above is specific to local-only, not a general regression: the
+# same fixture registered normally does prune the branch.
+test_non_local_only_still_prunes() {
+  local home clone out
+  home=$(new_home)
+  clone=$(build_packed_prunable "$home" iotakeep)
+
+  out=$(run_sync "$home" "$clone")
+
+  assert_contains "$out" "iotakeep: pruned feature" "a normal clone still prunes gone-upstream branches"
+  git -C "$clone" rev-parse --verify --quiet refs/heads/feature >/dev/null \
+    && fail "a normal clone's gone-upstream branch 'feature' should have been pruned"
+  pass "a normal clone still prunes gone-upstream branches"
+}
+
+# A local-only clone that cannot fast-forward is REPORTED, never made to comply:
+# the same guarded path every other clone gets.
+test_local_only_unsafe_reported_not_forced() {
+  local home clone out before
+  home=$(new_home)
+  clone=$(build_pair "$home" iotastuck)
+  advance_origin "$home" iotastuck C1
+  register_local_only "$home" iotastuck
+  git -C "$clone" checkout -q -b side
+  before=$(head_sha "$clone")
+
+  out=$(run_sync "$home" "$clone")
+
+  assert_contains "$out" "iotastuck: STUCK: on branch side, 1 commits behind origin/main - needs attention" \
+    "an unsafe local-only clone is reported, quantified"
+  [ "$(head_sha "$clone")" = "$before" ] \
+    || fail "an unsafe local-only clone must be left untouched, HEAD moved"
+  pass "an unsafe local-only clone is reported STUCK and left untouched"
 }
 
 test_single_project_by_bare_name_resolves() {
@@ -703,7 +768,10 @@ test_diverged_is_stuck_untouched
 test_on_default_clean_behind_fast_forwards
 test_already_current_unchanged
 test_no_origin_skipped
-test_local_only_skipped
+test_local_only_fast_forwarded
+test_local_only_prune_skipped
+test_non_local_only_still_prunes
+test_local_only_unsafe_reported_not_forced
 test_single_project_by_bare_name_resolves
 test_single_project_by_bare_name_ignores_cwd_shadow
 test_single_project_by_projects_relative_name_resolves

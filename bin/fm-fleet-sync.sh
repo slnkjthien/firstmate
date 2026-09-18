@@ -11,8 +11,10 @@
 # is left untouched and reported as a quantified, loud "STUCK: ... N commits behind
 # ... - needs attention" warning rather than a quiet drift. Nothing is ever forced,
 # stashed, or discarded.
-# Still skips (benignly) local-only/no-origin projects, missing remotes/branches,
-# and fetch failures.
+# Still skips (benignly) no-origin projects, missing remotes/branches, and fetch
+# failures. A local-only project is fast-forwarded like any other - the guarded
+# fast-forward is equally safe on a clone firstmate never pushes to - but its
+# branch pruning is skipped; see sync_project.
 # A candidate under projects/ must be the root of its own work tree: git discovery
 # walks up, so a plain nested directory would otherwise resolve to the enclosing
 # repository (the firstmate checkout) and be synced under that directory's label.
@@ -324,12 +326,16 @@ sync_project() {
     echo "$label: skipped: not a clone root (git would act on $proj_top)"
     return 0
   fi
+  # A local-only project still gets its default branch fast-forwarded: that
+  # operation is guarded identically whether or not firstmate ever pushes here
+  # (never forced, never stashed, nothing discarded, and an unsafe clone is
+  # reported STUCK instead of made to comply). Only branch pruning is skipped,
+  # because its "upstream gone means the PR merged" reasoning needs a remote
+  # firstmate publishes to, which a local-only project by definition has not.
   mode_line=$("$FM_ROOT/bin/fm-project-mode.sh" "$label" 2>/dev/null || echo "no-mistakes off")
   mode=${mode_line%% *}
-  if [ "$mode" = "local-only" ]; then
-    echo "$label: skipped: local-only project"
-    return 0
-  fi
+  local_only=no
+  [ "$mode" != "local-only" ] || local_only=yes
   if ! git -C "$PROJ" remote get-url origin >/dev/null 2>&1; then
     echo "$label: skipped: no origin remote"
     return 0
@@ -344,7 +350,9 @@ sync_project() {
     return 0
   fi
 
-  prune_gone_branches || true
+  if [ "$local_only" = no ]; then
+    prune_gone_branches || true
+  fi
 
   DEFAULT=$(default_branch) || {
     echo "$label: skipped: cannot determine default branch"

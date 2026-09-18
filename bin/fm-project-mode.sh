@@ -7,7 +7,8 @@
 # for this project", never "how does this task ship". A task's delivery mode and
 # yolo are resolved by firstmate at intake and passed explicitly to
 # bin/fm-brief.sh, bin/fm-spawn.sh, and bin/fm-promote.sh (AGENTS.md section 7).
-# The consumers are bin/fm-fleet-sync.sh (skip local-only clones),
+# The consumers are bin/fm-fleet-sync.sh (skip branch pruning on local-only
+# clones, which are otherwise refreshed like any other),
 # bin/fm-home-seed.sh (refuse local-only seeding, run no-mistakes init), and
 # bin/fm-spawn.sh's advisory registry-deviation notice.
 #
