@@ -316,7 +316,7 @@ Resolve every ship task's concrete delivery mode and `yolo` merge posture at int
 Pass the mode explicitly to the brief, and pass both values explicitly to the spawn and any scout promotion; each command refuses to guess the values it consumes.
 A current explicit captain instruction wins; otherwise the project's registry entry is the captain's standing posture, and dropping below its rigor needs a reason you can state.
 On a `no-mistakes-prod-only` project, classify the task's surface: internal-only tooling, automation, contributor or operator process, and release or submission work ships `direct-PR`, while product-facing, mixed, and uncertain work ships `no-mistakes`; never infer internal-only from file location or project name.
-That classification has no `direct-PR` leg on a `forge=gerrit` project, where internal-only, contributor-process, and release work ships `local-only` instead and product-facing, mixed, and uncertain work still ships `no-mistakes`.
+That classification has no `direct-PR` leg on a `forge=gerrit` project, so every task there ships `no-mistakes`.
 An unregistered project or absent registry resolves to `no-mistakes` with yolo off, and the registration gap goes to the captain.
 A project's registered `forge=` token is the captain's explicit project fact rather than a per-task choice, so pass it unchanged to the brief - a scout promotion reads the binding itself - and never infer one from a remote, host, or protocol.
 On a `forge=gerrit` project `no-mistakes` means the same review loop run with its push, PR, and CI steps skipped, ending at a ready branch the worker has recovered the pipeline's own fix commits into rather than at a PR, and `direct-PR` is refused because that forge has no pull request to open.
@@ -405,7 +405,7 @@ Retire a custom check only through `bin/fm-check-unregister.sh <id>` (or `bin/fm
 On a `forge=gerrit` project there is no PR at all: the worker stops at `done: ready in branch fm/<id> - no-mistakes passed, fixes recovered`, and publishing that branch is firstmate's step, never the worker's.
 Take it only on the captain's explicit push authority naming that concrete change, since `yolo` is inactive on this forge, and push the worker's own copy of `fm/<id>` to the review server's `refs/for/` target so the pipeline's recovered fix commits are what reaches review; a branch rebuilt from anywhere else can ship the unfixed code.
 Record the resulting change URL in the backlog item note as that task's landing artifact, relay it to the captain, and hold the task open until a human reviewer approves and submits the change.
-Teardown then follows the ordinary rule and proves landing against the local default ref, so fetch the submitted change into local `main` first: `bin/fm-teardown.sh` has no Gerrit-aware landed proof and otherwise refuses the worktree as unpushed and unlanded.
+Teardown then follows the ordinary rule with no local step to prepare: `bin/fm-teardown.sh` fetches the project's `origin/<default>` itself and proves the branch's content is already contained there, so a submitted change tears down cleanly and teardown refuses only while the change is still unsubmitted.
 
 Tear down a ship task only after landing is confirmed.
 A teardown refusal for uncommitted or unlanded work is a stop-and-investigate result, never an obstacle to bypass.
