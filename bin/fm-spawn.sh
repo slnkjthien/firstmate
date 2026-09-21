@@ -2830,12 +2830,15 @@ EOF
     exit 1
   fi
   # The dangerous direction is asymmetric, so the checks are too. A Gerrit project
-  # launched on a brief that does not carry the forge hands the worker the PR
-  # contract: it would be told to open a pull request and report checks green on a
-  # server that has neither. Re-scaffold instead. The reverse - a forge-bound brief
-  # on a project registered without one - only stops the worker at a ready branch,
-  # which is safe, so it is announced and allowed like a rigor deviation.
-  if [ "$STANDING_FORGE" = gerrit ] && [ "$BRIEF_FORGE" != gerrit ]; then
+  # launched on a no-mistakes brief that does not carry the forge hands the worker
+  # the PR contract: it would be told to open a pull request and report checks
+  # green on a server that has neither. Re-scaffold instead. No other mode reaches
+  # here carrying that contract - direct-PR is refused outright above, and a
+  # local-only brief already ends at a ready branch whether or not it names the
+  # forge. The reverse - a forge-bound brief on a project registered without one -
+  # only stops the worker at a ready branch, which is safe, so it is announced and
+  # allowed like a rigor deviation.
+  if [ "$STANDING_FORGE" = gerrit ] && [ "$MODE" = no-mistakes ] && [ "$BRIEF_FORGE" != gerrit ]; then
     echo "error: forge mismatch for $ID: $PROJ_NAME is registered forge=gerrit but $BRIEF records ${BRIEF_FORGE:-no forge}; re-scaffold the brief with fm-brief.sh --forge gerrit so the worker is not told to open a pull request this forge does not have" >&2
     exit 1
   fi

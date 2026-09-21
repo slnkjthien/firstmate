@@ -27,13 +27,12 @@
 # is a project fact rather than a per-task decision, so promotion takes it from
 # there instead of asking firstmate to remember it.
 # no-mistakes-prod-only is a registry policy rather than a task mode and is refused.
-# --forge is optional here and defaults to the project's registered binding, or to
-# none for a task whose record names no project. Passing it is an explicit
-# assertion, refused when it contradicts the registry, so the flag can never
-# quietly weaken the binding. bin/fm-brief.sh's --forge stays required because that
-# script has no registry access at all; bin/fm-project-mode.sh's header owns the
-# binding and bin/fm-dod-lib.sh owns what it changes for the worker.
-# Usage: fm-promote.sh <task-id> --mode <no-mistakes|direct-PR|local-only> --yolo <on|off> [--forge <none|gerrit>]
+# There is no --forge flag here: the binding comes from the registry, and for a
+# task record naming no project it is none. bin/fm-brief.sh's --forge stays
+# required because that script has no registry access at all;
+# bin/fm-project-mode.sh's header owns the binding and bin/fm-dod-lib.sh owns what
+# it changes for the worker.
+# Usage: fm-promote.sh <task-id> --mode <no-mistakes|direct-PR|local-only> --yolo <on|off>
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -64,7 +63,6 @@ YOLO=
 MODE_SET=0
 YOLO_SET=0
 FORGE=none
-FORGE_SET=0
 POS=()
 want_value=
 for a in "$@"; do
@@ -75,7 +73,6 @@ for a in "$@"; do
     case "$want_value" in
       mode) MODE=$a; MODE_SET=1 ;;
       yolo) YOLO=$a; YOLO_SET=1 ;;
-      forge) FORGE=$a; FORGE_SET=1 ;;
     esac
     want_value=
     continue
@@ -85,8 +82,6 @@ for a in "$@"; do
     --mode=*) MODE=${a#--mode=}; MODE_SET=1 ;;
     --yolo) want_value=yolo ;;
     --yolo=*) YOLO=${a#--yolo=}; YOLO_SET=1 ;;
-    --forge) want_value=forge ;;
-    --forge=*) FORGE=${a#--forge=}; FORGE_SET=1 ;;
     *) POS+=("$a") ;;
   esac
 done
@@ -111,20 +106,19 @@ case "$YOLO" in
   on|off) ;;
   *) echo "error: --yolo must be on or off (got '$YOLO')" >&2; exit 1 ;;
 esac
-# The forge is checked once for an explicitly passed flag and again once the
-# registry binding has supplied it, so a posture this forge cannot carry is
-# refused whichever of the two named it. Merge authority on a Gerrit forge is
-# refused rather than quietly dropped, on the captain's decision of 2026-09-15
+# A posture this forge cannot carry is refused before the lock and again once the
+# registry binding has been read. Merge authority on a Gerrit forge is refused
+# rather than quietly dropped, on the captain's decision of 2026-09-15
 # (bin/fm-project-mode.sh's header carries it).
-refuse_impossible_forge_posture() {  # <source-label>
-  fm_forge_valid_for_mode "$FORGE" "$MODE" "fm-promote.sh $1" || return 1
+refuse_impossible_forge_posture() {
+  fm_forge_valid_for_mode "$FORGE" "$MODE" fm-promote.sh || return 1
   if [ "$FORGE" = gerrit ] && [ "$YOLO" = on ]; then
     echo "error: --yolo on is refused for forge=gerrit: a Code-Review+2 is a positive attributed claim that a named human approved and firstmate must not manufacture one (captain's decision 2026-09-15); promote with --yolo off and take any landing on a current explicit captain instruction naming that concrete change" >&2
     return 1
   fi
   return 0
 }
-refuse_impossible_forge_posture --forge || exit 1
+refuse_impossible_forge_posture || exit 1
 
 ID=${POS[0]}
 fm_task_id_creation_valid "$ID" || { echo "error: invalid task id" >&2; exit 2; }
@@ -174,8 +168,7 @@ grep -qx 'kind=scout' "$META" || { echo "error: task $ID is not a scout task (ki
 
 # Unlike the mode and yolo above, the forge is not a per-task decision: it is the
 # captain's project binding, so promotion takes it from the registry rather than
-# from a flag firstmate must remember. An explicitly passed flag is an assertion
-# about that binding and is refused when it contradicts it.
+# from a flag firstmate must remember.
 PROMOTE_PROJECT=$(sed -n 's/^project=//p' "$META" | head -n 1)
 if [ -n "$PROMOTE_PROJECT" ]; then
   PROMOTE_PROJECT_NAME=$(basename "$PROMOTE_PROJECT")
@@ -184,13 +177,8 @@ if [ -n "$PROMOTE_PROJECT" ]; then
     exit 1
   fi
   PROMOTE_STANDING_FORGE=$(printf '%s\n' "$PROMOTE_STANDING_LINE" | awk '{print $3}')
-  PROMOTE_STANDING_FORGE=${PROMOTE_STANDING_FORGE:-none}
-  if [ "$FORGE_SET" -eq 1 ] && [ "$FORGE" != "$PROMOTE_STANDING_FORGE" ]; then
-    echo "error: forge mismatch for $ID: $PROMOTE_PROJECT_NAME is registered forge=$PROMOTE_STANDING_FORGE but this promotion passed --forge $FORGE; drop the flag to take the project's registered binding, or correct data/projects.md if the binding itself is wrong" >&2
-    exit 1
-  fi
-  FORGE=$PROMOTE_STANDING_FORGE
-  refuse_impossible_forge_posture "(registered forge for $PROMOTE_PROJECT_NAME)" || exit 1
+  FORGE=${PROMOTE_STANDING_FORGE:-none}
+  refuse_impossible_forge_posture || exit 1
 fi
 
 SCOUT_BRIEF="$DATA/$ID/brief.md"

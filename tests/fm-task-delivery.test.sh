@@ -984,7 +984,7 @@ ROWS
 # say so out loud: the registry parser reports yolo=off with the reason instead of
 # the registered +yolo, and a spawn or promotion asked for it outright refuses.
 test_forge_gerrit_refuses_yolo() {
-  local home out err rec proj fakebin status
+  local home out err rec proj fakebin status meta
   home="$TMP_ROOT/forge-yolo/home"
   mkdir -p "$home/data"
   printf '%s\n' '- fp [no-mistakes +yolo forge=gerrit] - fixture (added 2026-01-01)' > "$home/data/projects.md"
@@ -1012,10 +1012,13 @@ EOF
     "the spawn refusal did not carry the captain's reason"
   assert_absent "$home/state/forge-yolo-s1.meta" "the refused spawn still recorded a task"
 
-  out=$(FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" "$PROMOTE" forge-yolo-p1 --mode no-mistakes --yolo on --forge gerrit 2>&1)
+  meta="$home/state/forge-yolo-p1.meta"
+  printf 'window=fm-forge-yolo-p1\nkind=scout\nworktree=/tmp/wt\nproject=%s\n' "$proj" > "$meta"
+  out=$(FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" "$PROMOTE" forge-yolo-p1 --mode no-mistakes --yolo on 2>&1)
   status=$?
-  [ "$status" -ne 0 ] || fail "a promotion with --yolo on was accepted for the gerrit forge"
+  [ "$status" -ne 0 ] || fail "a promotion with --yolo on was accepted for the gerrit-forge project"
   assert_contains "$out" "--yolo on is refused" "the promotion refusal did not name the refused flag"
+  grep -qx 'kind=scout' "$meta" || fail "the refused promotion still flipped the task record"
   pass "forge=gerrit: yolo is refused with its reason, never silently dropped"
 }
 
@@ -1112,6 +1115,16 @@ EOF
   out=$(run_spawn "$home" "$fakebin" forge-agree-a3 "$proj" claude --mode no-mistakes --yolo off 2>&1)
   assert_not_contains "$out" "forge mismatch" "an agreeing brief and registry were reported as drift"
 
+  # local-only already ends at a ready branch, so its contract is the same whether
+  # or not the brief names the forge: there is no pull request for the binding to
+  # take away, and demanding a re-scaffold would be ceremony.
+  FM_HOME="$home" "$BRIEF" forge-agree-a4 proj --mode local-only >/dev/null \
+    || fail "a local-only ship brief should scaffold without a forge"
+  fill_brief_subsections "$home/data/forge-agree-a4/brief.md" "Land it locally." "Stop at a ready branch."
+  out=$(run_spawn "$home" "$fakebin" forge-agree-a4 "$proj" claude --mode local-only --yolo off 2>&1)
+  assert_not_contains "$out" "forge mismatch" \
+    "a local-only launch on a bound project was refused for a contract it never carries"
+
   rec=$(make_home forge-agree-plain "- proj [no-mistakes] - fixture (added 2026-01-01)")
   IFS='|' read -r home proj fakebin <<EOF
 $rec
@@ -1157,7 +1170,7 @@ EOF
 # binding, so promotion takes it from the registry with no flag to remember, and
 # refuses a flag that contradicts it.
 test_promotion_carries_the_forge_binding() {
-  local home sendroot meta out payload id status
+  local home sendroot meta out payload id
   home="$TMP_ROOT/forge-promote/home"
   sendroot="$TMP_ROOT/forge-promote/sendroot"
   mkdir -p "$home/state" "$home/data" "$home/projects/proj" "$sendroot/bin"
@@ -1175,13 +1188,6 @@ STUB
     || fail "scout brief generation should succeed"
   fill_brief_subsections "$home/data/$id/brief.md" \
     "Fix what the investigation found on the Gerrit project." "Carry over only the fix."
-
-  out=$(FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" "$PROMOTE" "$id" --mode no-mistakes --yolo off --forge none 2>&1)
-  status=$?
-  [ "$status" -ne 0 ] || fail "promotion contradicting the registered forge was accepted"
-  assert_contains "$out" "forge mismatch for $id" "the refusal did not name the drift it caught"
-  assert_contains "$out" "drop the flag" "the refusal did not say how to correct the promotion"
-  grep -qx 'kind=scout' "$meta" || fail "the refused promotion still flipped the task record"
 
   out=$(FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" "$PROMOTE" "$id" --mode no-mistakes --yolo off 2>&1) \
     || fail "promotion should take the registered forge with no flag to remember"
