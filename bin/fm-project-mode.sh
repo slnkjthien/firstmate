@@ -124,6 +124,20 @@ fi
 mode=$parsed_one
 yolo=$parsed_two
 forge=$parsed_three
+# One owner of the forge values this fleet knows. The forge field is checked
+# against it, and so is the mode slot, where a forge value is a binding written
+# without its token rather than a delivery mode.
+KNOWN_FORGES="none gerrit"
+forge_is_known() {  # <value>
+  case " $KNOWN_FORGES " in
+    *" $1 "*) return 0 ;;
+  esac
+  return 1
+}
+if forge_is_known "$mode"; then
+  echo "refused: \"$mode\" is a forge rather than a delivery mode, and it stands in the mode slot of the annotation registered for $NAME in $REG; a forge binds only through its own token, so write \"forge=$mode\" beside the delivery mode; correct the registry entry" >&2
+  exit 3
+fi
 case "$mode" in
   no-mistakes|direct-PR|local-only|no-mistakes-prod-only) ;;
   *) echo "warn: unknown mode \"$mode\" for $NAME; defaulting to no-mistakes off" >&2; mode=no-mistakes; yolo=off ;;
@@ -132,13 +146,11 @@ case "$yolo" in on|off) ;; *) yolo=off ;; esac
 # A forge this fleet does not know is a registry error, not a posture: resolving
 # it to "no registered forge" is how a Gerrit project would quietly receive the
 # pull-request contract, so nothing is reported and the caller is refused.
-case "$forge" in
-  ""|none) forge=none ;;
-  gerrit) ;;
-  *)
-    echo "refused: unknown forge \"$forge\" registered for $NAME in $REG; the accepted values are forge=gerrit, or no forge token at all for a forge whose pull requests no-mistakes already drives; correct the registry entry" >&2
-    exit 3 ;;
-esac
+[ -n "$forge" ] || forge=none
+if ! forge_is_known "$forge"; then
+  echo "refused: unknown forge \"$forge\" registered for $NAME in $REG; the accepted values are forge=gerrit, or no forge token at all for a forge whose pull requests no-mistakes already drives; correct the registry entry" >&2
+  exit 3
+fi
 if [ "$forge" = gerrit ] && [ "$yolo" = on ]; then
   echo "refused: +yolo is registered for $NAME but yolo is inactive for forge=gerrit, so this reports yolo=off: a Gerrit Code-Review+2 is a positive attributed claim that a named human approved, and firstmate must not manufacture one (captain's decision 2026-09-15)" >&2
   yolo=off

@@ -959,6 +959,19 @@ the forge value with no key at all|- fp [no-mistakes gerrit] - fixture (added 20
 an unknown token beside a valid forge|- fp [no-mistakes forge=gerrit +tomorrow] - fixture (added 2026-01-01)|+tomorrow
 ROWS
 
+  # A forge value standing alone is the most natural shorthand a captain reaches
+  # for, and the mode slot would otherwise swallow it as a mistyped mode and fall
+  # back to no-mistakes with no forge bound at all.
+  printf '%s\n' '- fp [gerrit] - fixture (added 2026-01-01)' > "$home/data/projects.md"
+  out=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>/dev/null)
+  status=$?
+  [ "$status" -ne 0 ] || fail "a forge standing in the mode slot resolved to a posture (got '$out')"
+  [ -z "$out" ] || fail "a refused mode-slot forge still handed the caller a posture: '$out'"
+  err=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>&1 >/dev/null) || true
+  assert_contains "$err" 'is a forge rather than a delivery mode' \
+    "the refusal did not say why the mode slot could not take that token"
+  assert_contains "$err" '"forge=gerrit"' "the refusal did not name the token that binds a forge"
+
   printf '%s\n' '- fp [no-mistakes +yolo forge=gerrit] - fixture (added 2026-01-01)' > "$home/data/projects.md"
   out=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>/dev/null)
   [ "$out" = "no-mistakes off gerrit" ] || fail "the accepted token set stopped resolving (got '$out')"
