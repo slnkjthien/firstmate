@@ -2839,7 +2839,7 @@ EOF
   # only stops the worker at a ready branch, which is safe, so it is announced and
   # allowed like a rigor deviation.
   if [ "$STANDING_FORGE" = gerrit ] && [ "$MODE" = no-mistakes ] && [ "$BRIEF_FORGE" != gerrit ]; then
-    echo "error: forge mismatch for $ID: $PROJ_NAME is registered forge=gerrit but $BRIEF records ${BRIEF_FORGE:-no forge}; re-scaffold the brief with fm-brief.sh --forge gerrit so the worker is not told to open a pull request this forge does not have" >&2
+    echo "error: forge mismatch for $ID: $PROJ_NAME is registered forge=gerrit but $SOURCE_BRIEF records ${BRIEF_FORGE:-no forge}; keep the filled ## Captain's intent and ## Firstmate spec bodies, remove $SOURCE_BRIEF, re-scaffold it with fm-brief.sh $ID $PROJ_NAME --mode $MODE --forge gerrit, then re-fill those two subsections, so the worker is not told to open a pull request this forge does not have" >&2
     exit 1
   fi
   if [ "$BRIEF_FORGE" = gerrit ] && [ "$STANDING_FORGE" != gerrit ]; then

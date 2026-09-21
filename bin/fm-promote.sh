@@ -106,10 +106,13 @@ case "$YOLO" in
   on|off) ;;
   *) echo "error: --yolo must be on or off (got '$YOLO')" >&2; exit 1 ;;
 esac
-# A posture this forge cannot carry is refused before the lock and again once the
-# registry binding has been read. Merge authority on a Gerrit forge is refused
-# rather than quietly dropped, on the captain's decision of 2026-09-15
-# (bin/fm-project-mode.sh's header carries it).
+# A posture this forge cannot carry is refused once the registry binding has been
+# read. Merge authority on a Gerrit forge is refused rather than quietly dropped,
+# on the captain's decision of 2026-09-15 (bin/fm-project-mode.sh's header carries
+# it). The call right below the definition is kept deliberately as a guard on the
+# mode and yolo posture; it cannot refuse on the forge, which stays none until the
+# registry supplies it after the lock, so the post-registry call is the one that
+# fires.
 refuse_impossible_forge_posture() {
   fm_forge_valid_for_mode "$FORGE" "$MODE" fm-promote.sh || return 1
   if [ "$FORGE" = gerrit ] && [ "$YOLO" = on ]; then

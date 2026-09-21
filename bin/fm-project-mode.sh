@@ -86,16 +86,17 @@ if [ ! -f "$REG" ]; then
 fi
 
 # awk emits "posture <mode> <yolo> <forge>", "token <bad-token>" for an annotation
-# token it does not recognize, or nothing if the project is absent. A `forge=`
-# token with an empty value reaches the shell as an empty forge field, which the
-# closed-set check below reads as no registered forge, exactly like an annotation
-# carrying no forge token at all.
+# token it does not recognize, "unterminated" for a bracket the line never closes,
+# or nothing if the project is absent. A `forge=` token with an empty value reaches
+# the shell as an empty forge field, which the closed-set check below reads as no
+# registered forge, exactly like an annotation carrying no forge token at all.
 parsed=$(awk -v n="$NAME" '
   $1=="-" && $2==n {
     mode="no-mistakes"; yolo="off"; forge="none";
     if ($3 ~ /^\[/) {
-      s="";
-      for (i=3; i<=NF; i++) { s = s (s==""?"":" ") $i; if ($i ~ /\]$/) break }
+      s=""; closed=0;
+      for (i=3; i<=NF; i++) { s = s (s==""?"":" ") $i; if ($i ~ /\]$/) { closed=1; break } }
+      if (!closed) { print "unterminated"; exit }
       gsub(/^\[|\]$/, "", s);           # strip the surrounding brackets
       k = split(s, a, " ");
       for (j=1; j<=k; j++) {
@@ -118,6 +119,10 @@ fi
 read -r kind parsed_one parsed_two parsed_three <<EOF
 $parsed
 EOF
+if [ "$kind" = unterminated ]; then
+  echo "refused: unterminated annotation for $NAME in $REG: the bracket opens but no \"]\" closes it, so the description cannot be told apart from the annotation; close the bracket after the delivery mode and any +yolo or forge= token" >&2
+  exit 3
+fi
 if [ "$kind" = token ]; then
   echo "refused: unrecognized annotation token \"$parsed_one\" registered for $NAME in $REG; an annotation carries a delivery mode first, then only +yolo and forge=gerrit in any order; correct the registry entry" >&2
   exit 3

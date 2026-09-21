@@ -959,6 +959,18 @@ the forge value with no key at all|- fp [no-mistakes gerrit] - fixture (added 20
 an unknown token beside a valid forge|- fp [no-mistakes forge=gerrit +tomorrow] - fixture (added 2026-01-01)|+tomorrow
 ROWS
 
+  # An annotation the line never closes swallows the description as tokens, so the
+  # refusal must point at the missing bracket rather than at a description word.
+  printf '%s\n' '- fp [no-mistakes - fixture (added 2026-01-01)' > "$home/data/projects.md"
+  out=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>/dev/null)
+  status=$?
+  [ "$status" -ne 0 ] || fail "an unterminated annotation resolved to a posture (got '$out')"
+  [ -z "$out" ] || fail "a refused unterminated annotation still handed the caller a posture: '$out'"
+  err=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>&1 >/dev/null) || true
+  assert_contains "$err" 'unterminated annotation' "the refusal did not name the unclosed bracket"
+  assert_not_contains "$err" 'unrecognized annotation token' \
+    "the refusal blamed a description word instead of the missing bracket"
+
   # A forge value standing alone is the most natural shorthand a captain reaches
   # for, and the mode slot would otherwise swallow it as a mistyped mode and fall
   # back to no-mistakes with no forge bound at all.
@@ -1100,7 +1112,14 @@ EOF
   status=$?
   [ "$status" -ne 0 ] || fail "a gerrit project launched on a brief that records no forge"
   assert_contains "$out" "forge mismatch for forge-agree-a1" "the refusal did not name the drift it caught"
-  assert_contains "$out" "fm-brief.sh --forge gerrit" "the refusal did not say how to correct the brief"
+  assert_contains "$out" "remove $home/data/forge-agree-a1/brief.md" \
+    "the refusal did not name the authored brief the re-scaffold must replace"
+  assert_not_contains "$out" "remove $home/data/forge-agree-a1/launch-brief.md" \
+    "the refusal named the generated launch brief instead of the authored one"
+  assert_contains "$out" "fm-brief.sh forge-agree-a1 proj --mode no-mistakes --forge gerrit" \
+    "the refusal did not print a re-scaffold command that can actually run"
+  assert_contains "$out" "Captain's intent" \
+    "the refusal did not say to preserve the filled subsections the re-scaffold discards"
   assert_absent "$home/state/forge-agree-a1.meta" "the refused spawn still recorded a task"
 
   write_brief "$home" forge-agree-a2 direct-PR
