@@ -1483,15 +1483,27 @@ group/apps/console
   [ -z "$out" ] || fail "Gerrit poll emitted for a record naming no change"
 
   # A record for some other change can never wake this task's poll, however the
-  # server came to return it.
+  # server came to return it. The change number is what names the change, and
+  # --host is what pins the server.
   out=$(FM_TEST_GERRIT_STATUS=MERGED FM_TEST_GERRIT_CHANGE=4202 run_poll "$dir")
   [ -z "$out" ] || fail "Gerrit poll emitted for another change's record"
+  out=$(FM_TEST_GERRIT_RAW='{"ok":true,"op":"show","changes":[{"change":4202,"status":"MERGED","url":null}]}' \
+    run_poll "$dir")
+  [ -z "$out" ] || fail "Gerrit poll emitted for another change's url-less record"
+
+  # Gerrit composes a change's url field from gerrit.canonicalWebUrl and omits
+  # it when that setting is unset, so a merge must still be reported when the
+  # server returns the field null or does not return it at all. Comparing it
+  # against the stored URL is what would leave such a watch silent forever.
+  out=$(FM_TEST_GERRIT_RAW='{"ok":true,"op":"show","changes":[{"change":4201,"status":"MERGED","url":null}]}' \
+    run_poll "$dir")
+  [ "$out" = merged ] || fail "Gerrit poll stayed silent for a merged change with a null url"
+  out=$(FM_TEST_GERRIT_RAW='{"ok":true,"op":"show","changes":[{"change":4201,"status":"MERGED"}]}' \
+    run_poll "$dir")
+  [ "$out" = merged ] || fail "Gerrit poll stayed silent for a merged change with no url field"
   out=$(FM_TEST_GERRIT_STATUS=MERGED \
-    FM_TEST_GERRIT_URL=https://gerrit.example/c/group/apps/other/+/4201 run_poll "$dir")
-  [ -z "$out" ] || fail "Gerrit poll emitted for a record naming another project"
-  out=$(FM_TEST_GERRIT_STATUS=MERGED \
-    FM_TEST_GERRIT_URL=https://elsewhere.example/c/group/apps/console/+/4201 run_poll "$dir")
-  [ -z "$out" ] || fail "Gerrit poll emitted for a record naming another server"
+    FM_TEST_GERRIT_URL=https://alias.example/c/group/apps/console/+/4201 run_poll "$dir")
+  [ "$out" = merged ] || fail "Gerrit poll stayed silent for a merged change behind an alias host"
 
   # A free-text subject carrying the merged spelling and the field separators
   # cannot forge a status, because the status is read from the structured

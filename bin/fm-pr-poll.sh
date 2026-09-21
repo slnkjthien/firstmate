@@ -149,16 +149,19 @@ case "$provider" in
     # submittability, a blocked_on list, or vote values would report a merge for
     # an open change that is merely ready to submit.
     #
-    # jq selects the one record whose change number matches and whose
-    # server-reported URL is exactly the stored URL, so a record for another
-    # host or project cannot wake this poll even if the tool returned one.
+    # jq selects the one record whose change number matches. A change number is
+    # server-global and --host already pins the server, so the number alone
+    # names the change. The record's own url field is deliberately not compared
+    # against the stored URL: Gerrit composes that field from
+    # gerrit.canonicalWebUrl and omits it when that setting is unset, so an
+    # equality test would leave a correctly armed watch silent forever on such
+    # a server, and this poll has no channel to report that it never matched.
     json=$(gerrit-axi show "$number" --host "$host" --json 2>/dev/null) || exit 0
     [ -n "$json" ] || exit 0
-    status=$(printf '%s' "$json" | jq -r --argjson change "$number" --arg url "$url" '
+    status=$(printf '%s' "$json" | jq -r --argjson change "$number" '
       if type == "object" and .ok == true and (.changes | type) == "array" then
         [.changes[] | select((.change | type) == "number" and .change == $change)] as $match
         | if ($match | length) == 1
-             and $match[0].url == $url
              and ($match[0].status | type) == "string"
           then $match[0].status
           else error("no exact change record")

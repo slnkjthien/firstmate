@@ -1049,14 +1049,17 @@ FIELDS
 
 # gerrit-axi resolves its server from the current directory's origin remote
 # first, so the host is passed explicitly from the parsed identity and a read
-# outside a clone still reaches the right server. The status is the only field
-# read: a merged change and an approved-but-unsubmitted one report the same
-# submit, submittable, and blocked_on values, so only the status separates them.
-# The record is accepted only when exactly one returned change matches both the
-# stored number and the stored URL, so another project's or server's record can
-# never answer for this change.
-fm_pr_gerrit_read_record() {  # <host> <path> <number>
-  local host=$1 path=$2 number=$3 change_url json fields line
+# outside a clone still reaches the right server. A change number is
+# server-global and --host pins the server, so the number alone names the
+# change and the project path is not part of the read. The status is the only
+# field read: a merged change and an approved-but-unsubmitted one report the
+# same submit, submittable, and blocked_on values, so only the status separates
+# them. The record's own url field is not compared against the stored URL,
+# because Gerrit composes it from gerrit.canonicalWebUrl and omits it when that
+# setting is unset, which would turn every read on such a server into a
+# permanent unknown.
+fm_pr_gerrit_read_record() {  # <host> <number>
+  local host=$1 number=$2 json fields line
   local total=0 named=0 state='' merged=''
   FM_PR_RECORD_STATE=
   FM_PR_RECORD_MERGED=
@@ -1065,17 +1068,15 @@ fm_pr_gerrit_read_record() {  # <host> <path> <number>
   case "$number" in
     ''|*[!0-9]*) return 1 ;;
   esac
-  change_url="https://$host/c/$path/+/$number"
 
   if ! json=$(gerrit-axi show "$number" --host "$host" --json 2>/dev/null) \
     || [ -z "$json" ]; then
     return 1
   fi
-  if ! fields=$(printf '%s' "$json" | jq -r --argjson change "$number" --arg url "$change_url" '
+  if ! fields=$(printf '%s' "$json" | jq -r --argjson change "$number" '
       if type == "object" and .ok == true and (.changes | type) == "array" then
         [.changes[] | select((.change | type) == "number" and .change == $change)] as $match
         | if ($match | length) == 1
-             and $match[0].url == $url
              and ($match[0].status | type) == "string"
              and $match[0].status != ""
           then

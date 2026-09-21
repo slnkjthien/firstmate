@@ -53,6 +53,15 @@ A watch built on any of the first three reports a merge for an approved change n
 Nothing in this adapter reads readiness, but the distinction is recorded here because the next thing built on this record will want it.
 A new patch set drops both blocking votes, and a rebase is a new patch set, so a readiness reading is only ever true of the patch set it was taken from.
 
+## The change number is the whole match, and the server's own URL is not
+
+`gerrit-axi` reports a change's `url` straight from `gerrit query` (`src/core/changes.js`, `url: row?.url ?? null`), and Gerrit composes that field from `gerrit.canonicalWebUrl`, omitting it when the setting is unset.
+So the field is null on a server that has never been told its own web address, and it names the canonical host rather than the alias a reader may have pasted the change URL from.
+Comparing it against the stored URL would therefore arm a watch that can never wake: the poll is silent on every failure, so a change on such a server would be polled forever and its merge never reported, with nothing distinguishing that from a change nobody has submitted.
+
+A change number is server-global on Gerrit and `--host` already pins the server, so the number alone names the change.
+The watch matches on the number and reads nothing else for identity; the recorded project path addresses the change for a human reader and is not part of the read.
+
 ## The host must be passed explicitly
 
 The poll runs from the firstmate home, in no repository.
@@ -82,13 +91,11 @@ merged
 
 $ bash bin/fm-pr-poll.sh --validated gerrit https://review.internal/c/group/apps/console/+/4201 review.internal group/apps/console 4201
 
-$ bash bin/fm-pr-poll.sh --validated gerrit https://review.internal/c/group/apps/other/+/4200 review.internal group/apps/other 4200
-
 $ bash bin/fm-pr-poll.sh --validated gerrit https://review.internal/c/group/apps/console/+/999999999 review.internal group/apps/console 999999999
 ```
 
 The merged change emits one `merged` line.
-The open change, a stored project that does not match the one the server reports, and a change that does not exist all emit nothing.
+The open change and a change that does not exist both emit nothing.
 
 ## The merge path refuses
 
@@ -109,7 +116,8 @@ The server permitting self-approval is what makes this a policy boundary rather 
 
 - The canonical change URL parses into the provider-tagged identity with its whole nested project path, and an adversarial URL matrix is refused.
 - Only an exact `MERGED` status wakes the watch, and a fully submittable open change does not.
-- A record naming another change, project, or server never wakes the watch, and neither does a doctored sidecar.
+- A record naming another change never wakes the watch, and neither does a doctored sidecar.
+- A merged record whose `url` is null, absent, or on an alias host still wakes the watch, because the change number is the whole match.
 - A merged spelling inside a change's free-text subject cannot forge a status.
 - An absent `gerrit-axi` or `jq` produces no wake, and arming reports the missing tool instead.
 - Arming records no `pr_head`: a Gerrit revision names one patch set, and `bin/fm-review-diff.sh` has no Gerrit path to resolve a current head with, so a recorded revision would quietly become the reviewed content after the next amend.

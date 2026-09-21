@@ -169,8 +169,11 @@ case "${1:-}" in
   show)
     [ -z "${FM_FAKE_GERRIT_READ_LOG:-}" ] || printf '%s\n' "$*" >> "$FM_FAKE_GERRIT_READ_LOG"
     [ "${FM_FAKE_GERRIT_READ_FAIL:-0}" = 1 ] && exit 1
-    printf '{"ok":true,"op":"show","changes":[{"change":%s,"subject":"fixture change","status":"%s","url":"%s"}]}\n' \
-      "${2:-0}" "${FM_FAKE_GERRIT_STATUS:-MERGED}" "${FM_FAKE_GERRIT_URL:-}"
+    # url defaults to null, the shape a server whose gerrit.canonicalWebUrl is
+    # unset returns, so every case here reads a record that carries no URL.
+    printf '{"ok":true,"op":"show","changes":[{"change":%s,"subject":"fixture change","status":"%s","url":%s}]}\n' \
+      "${FM_FAKE_GERRIT_CHANGE:-${2:-0}}" "${FM_FAKE_GERRIT_STATUS:-MERGED}" \
+      "${FM_FAKE_GERRIT_URL_JSON:-null}"
     exit 0 ;;
 esac
 exit 1
@@ -326,7 +329,8 @@ reset_fakes() {
   FM_FAKE_GLAB_READ_FAIL=0
   FM_FAKE_GLAB_READ_LOG=
   FM_FAKE_GERRIT_STATUS=MERGED
-  FM_FAKE_GERRIT_URL=
+  FM_FAKE_GERRIT_CHANGE=
+  FM_FAKE_GERRIT_URL_JSON=
   FM_FAKE_GERRIT_READ_FAIL=0
   FM_FAKE_GERRIT_READ_LOG=
   unset FM_FAKE_PR_47_STATE FM_FAKE_PR_47_MERGED FM_FAKE_PR_48_STATE FM_FAKE_PR_48_MERGED
@@ -336,7 +340,8 @@ reset_fakes() {
   export FM_FAKE_AXI_HOME_ERROR FM_FAKE_AXI_STATUS_RUN_ERROR FM_FAKE_AXI_STATUS_ERROR
   export FM_FAKE_PR_STATE FM_FAKE_PR_MERGED FM_FAKE_PR_READ_FAIL FM_FAKE_PR_READ_LOG FM_FAKE_PR_STATE_AXI
   export FM_FAKE_GLAB_STATE FM_FAKE_GLAB_READ_FAIL FM_FAKE_GLAB_READ_LOG
-  export FM_FAKE_GERRIT_STATUS FM_FAKE_GERRIT_URL FM_FAKE_GERRIT_READ_FAIL FM_FAKE_GERRIT_READ_LOG
+  export FM_FAKE_GERRIT_STATUS FM_FAKE_GERRIT_CHANGE FM_FAKE_GERRIT_URL_JSON
+  export FM_FAKE_GERRIT_READ_FAIL FM_FAKE_GERRIT_READ_LOG
   export FM_FAKE_PR_47_STATE FM_FAKE_PR_47_MERGED FM_FAKE_PR_48_STATE FM_FAKE_PR_48_MERGED
 }
 
@@ -1495,7 +1500,6 @@ test_terminal_passed_with_open_gerrit_change_does_not_claim_merged() {
   : > "$read_log"
   FM_FAKE_GERRIT_READ_LOG=$read_log
   FM_FAKE_GERRIT_STATUS=NEW
-  FM_FAKE_GERRIT_URL=$url
   FM_FAKE_AXI_STATUS="$(run_passed_with_pr fm/feat-dgerritopen "$url")"
   out=$(run_crew_state "$d" feat-dgerritopen)
   assert_contains "$out" "run passed: PR open" "open Gerrit change state is named"
@@ -1515,9 +1519,12 @@ test_terminal_passed_with_merged_gerrit_change_reports_merged() {
   fm_write_meta "$d/state/feat-dgerritmerged.meta" "window=fm:fm-feat-dgerritmerged" \
     "worktree=$d/wt" "kind=ship" "pr=$url"
   FM_FAKE_GERRIT_STATUS=MERGED
-  FM_FAKE_GERRIT_URL=$url
   FM_FAKE_AXI_STATUS="$(run_passed_with_pr fm/feat-dgerritmerged "$url")"
   out=$(run_crew_state "$d" feat-dgerritmerged)
+  # The fixture record carries a null url, the shape a server with no
+  # gerrit.canonicalWebUrl returns, so the merge is reported off the change
+  # number the read was addressed by rather than off a URL the server may
+  # never compose.
   assert_contains "$out" "run passed: PR merged" "merged Gerrit change is reported merged"
 
   # An abandoned change is this report's closed, and is never merged.
@@ -1538,21 +1545,21 @@ test_terminal_passed_with_unreadable_gerrit_change_reports_unknown() {
   fm_write_meta "$d/state/feat-dgerritunknown.meta" "window=fm:fm-feat-dgerritunknown" \
     "worktree=$d/wt" "kind=ship" "pr=$url"
   FM_FAKE_GERRIT_READ_FAIL=1
-  FM_FAKE_GERRIT_URL=$url
   FM_FAKE_AXI_STATUS="$(run_passed_with_pr fm/feat-dgerritunknown "$url")"
   out=$(run_crew_state "$d" feat-dgerritunknown)
   assert_contains "$out" "run passed: PR state unknown (unreadable)" "failed Gerrit read is honest unknown"
   assert_not_contains "$out" "PR merged" "failed Gerrit read must not be reported merged"
 
   # A record naming another change can never answer for this one, however the
-  # server came to return it.
+  # server came to return it. The change number is the whole identity of the
+  # match, so a wrong one is an unreadable record rather than a merge.
   reset_fakes
   FM_FAKE_GERRIT_STATUS=MERGED
-  FM_FAKE_GERRIT_URL=https://review.internal/c/group/apps/other/+/4202
+  FM_FAKE_GERRIT_CHANGE=4203
   FM_FAKE_AXI_STATUS="$(run_passed_with_pr fm/feat-dgerritunknown "$url")"
   out=$(run_crew_state "$d" feat-dgerritunknown)
   assert_contains "$out" "run passed: PR state unknown (unreadable)" "mismatched Gerrit record is honest unknown"
-  assert_not_contains "$out" "PR merged" "another project's merged record must not report merged"
+  assert_not_contains "$out" "PR merged" "another change's merged record must not report merged"
   pass "terminal passed run handles an unreadable or mismatched Gerrit read"
 }
 
