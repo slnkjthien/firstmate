@@ -5,7 +5,8 @@
 # worktree still needs.
 # Self-heals the one unambiguously safe drift: a clean, detached HEAD that holds
 # no unique commits (it is an ancestor of origin/<default>) and whose <default>
-# branch is free to check out is re-attached and then fast-forwarded ("recovered:").
+# branch is free to check out is re-attached, then fast-forwarded when it is
+# actually behind ("recovered:").
 # Every other off-default state - a non-default named branch, a detached HEAD with
 # unique commits, a dirty tree, or a diverged default - may hold real work, so it
 # is left untouched and reported as a quantified, loud "STUCK: ... N commits behind
