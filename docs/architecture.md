@@ -458,7 +458,7 @@ The refresh also prunes local branches whose remote is gone and that no worktree
 Fetches blocked by an orphaned `.git/packed-refs.lock` use bounded retries and remove the lock only when the shared staleness proof can prove it abandoned; [configuration.md](configuration.md#toolchain) owns the recovery details and tuning knobs.
 Clones without an origin remote and fetch failures remain benign skips.
 The session-start stage does refresh a `local-only` clone, because that guarded fast-forward is equally safe on a clone firstmate never pushes to.
-Only its branch pruning is skipped, since an upstream that is gone cannot mean "the PR merged" where firstmate never published, and a default branch strictly ahead of `origin/<default>` is the landed steady state of an approved `bin/fm-merge-local.sh` landing rather than a divergence, so it is reported as current instead of `STUCK:`.
+Only its branch pruning is skipped, since an upstream that is gone cannot mean "the PR merged" where firstmate never published, and a default branch strictly ahead of `origin/<default>` is the landed steady state of an approved `bin/fm-merge-local.sh` landing rather than a divergence, so it does not block the detached-HEAD self-heal and is reported as current instead of `STUCK:`.
 
 ## Self-updates stay safe
 
