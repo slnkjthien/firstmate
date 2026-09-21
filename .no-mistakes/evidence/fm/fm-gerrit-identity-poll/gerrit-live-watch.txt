@@ -1,0 +1,63 @@
+# Live Gerrit change watch - firstmate driven against a real Gerrit server
+# Identifiers are redacted per the project decision to keep internal host,
+# project and change numbers out of published files. The mapping is fixed:
+#   <real host>    -> review.internal
+#   <real project> -> group/apps/console
+#   merged change  -> 4200      open change -> 4201
+#   abandoned      -> 4202      absent      -> 999999999 (real value, not a change)
+# Every command below was run in this session; only those tokens are substituted.
+
+$ gerrit-axi --version
+gerrit-axi 0.1.0
+
+## 1. The server, read live (cwd=/tmp, outside any clone)
+
+$ gerrit-axi show 4200 4201 4202 --host review.internal --json | jq -c ".changes[] | {change,project,status,url}"
+{"change":4200,"project":"group/apps/console","status":"MERGED","url":"https://review.internal/c/group/apps/console/+/4200"}
+{"change":4201,"project":"group/apps/console","status":"NEW","url":"https://review.internal/c/group/apps/console/+/4201"}
+{"change":4202,"project":"group/apps/console","status":"ABANDONED","url":"https://review.internal/c/group/apps/console/+/4202"}
+
+## 2. Arming a Gerrit watch records the canonical identity and no pr_head
+
+$ FM_HOME=<lab> bin/fm-pr-check.sh task-merged https://review.internal/c/group/apps/console/+/4200
+armed: state/task-merged.check.sh
+
+$ cat <lab>/state/task-merged.meta
+window=firstmate:fm-task-merged
+endpoint_task_id=task-merged
+worktree=/tmp/fm-gerrit-live.Gw3Mna/wt
+project=/tmp/fm-gerrit-live.Gw3Mna/project
+kind=ship
+mode=no-mistakes
+pr=https://review.internal/c/group/apps/console/+/4200
+
+$ cat <lab>/state/task-merged.pr-poll
+gerrit
+https://review.internal/c/group/apps/console/+/4200
+review.internal
+group/apps/console
+4200
+
+$ grep -c "^pr_head=" <lab>/state/task-merged.meta
+0
+
+## 3. The armed polls, run from /tmp against the real server
+
+$ bash <lab>/state/task-merged.check.sh
+merged
+  [exit 0]
+$ bash <lab>/state/task-open.check.sh
+  [exit 0]
+$ bash <lab>/state/task-missing.check.sh
+  [exit 0]
+
+## 4. Adversarial: a doctored sidecar never wakes the watch
+
+$ # sidecar number swapped to 4201, then: bash <lab>/state/task-merged.check.sh
+  output: []
+$ # sidecar host swapped to elsewhere.example, then: bash <lab>/state/task-merged.check.sh
+  output: []
+$ # sidecar project swapped to OtherProject, then: bash <lab>/state/task-merged.check.sh
+  output: []
+$ # sidecar restored, then: bash <lab>/state/task-merged.check.sh
+  output: [merged]

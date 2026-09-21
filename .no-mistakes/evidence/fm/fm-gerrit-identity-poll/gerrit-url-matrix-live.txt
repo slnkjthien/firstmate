@@ -1,0 +1,15 @@
+# Adversarial Gerrit change URLs at the arming entry point (live product run).
+# Same redaction mapping as the other evidence files.
+
+https://review.internal/c/group/apps/console/+/4200 exit=0  armed       armed: state/task-url.check.sh
+https://review.internal/c/group/apps/console/+/4200/ exit=2  not armed   error: invalid PR check request
+https://review.internal/c/group/apps/console/+/0      exit=2  not armed   error: invalid PR check request
+https://review.internal/c/group/apps/console.git/+/4200 exit=2  not armed   error: invalid PR check request
+https://review.internal/c/-group/apps/console/+/4200 exit=2  not armed   error: invalid PR check request
+https://review.internal/c/group/apps/console/+/4200/+/2 exit=2  not armed   error: invalid PR check request
+https://review.internal/c/group/apps/console/+/4200?x=1 exit=2  not armed   error: invalid PR check request
+https://review.internal:8443/c/group/apps/console/+/4200 exit=2  not armed   error: invalid PR check request
+https://user@review.internal/c/group/apps/console/+/4200 exit=2  not armed   error: invalid PR check request
+http://review.internal/c/group/apps/console/+/4200  exit=2  not armed   error: invalid PR check request
+https://github.com/c/group/apps/console/+/4200             exit=2  not armed   error: invalid PR check request
+https://review.internal/group/apps/console/+/4200   exit=2  not armed   error: invalid PR check request

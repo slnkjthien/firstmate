@@ -1,0 +1,54 @@
+# Gerrit change state in the crew report, and the refusals
+# Same redaction mapping as gerrit-live-watch.txt. The run record itself
+# ("outcome: passed" for branch fm/feat-gerritlive) is supplied by a local
+# no-mistakes fixture, because a real validated run cannot be produced here;
+# the Gerrit read and every line below it are the real product against the
+# real server.
+
+## Crew state reads the live change status
+
+$ bin/fm-crew-state.sh feat-gerritlive      # pr=https://review.internal/c/group/apps/console/+/4200
+state: done · source: run-step · run passed: PR merged
+
+$ bin/fm-crew-state.sh feat-gerritlive      # pr=https://review.internal/c/group/apps/console/+/4201
+state: done · source: run-step · run passed: PR open
+
+$ bin/fm-crew-state.sh feat-gerritlive      # pr=https://review.internal/c/group/apps/console/+/4202
+state: done · source: run-step · run passed: PR closed
+
+$ bin/fm-crew-state.sh feat-gerritlive      # pr=https://review.internal/c/group/apps/console/+/999999999
+state: done · source: run-step · run passed: PR state unknown (unreadable)
+
+## The merge path refuses a Gerrit change
+
+$ bin/fm-pr-merge.sh task-merged https://review.internal/c/group/apps/console/+/4200
+error: firstmate does not submit a Gerrit change: the Gerrit adapter is read-only, because submitting requires an attributed human approval it must not manufacture
+$ echo $?
+2
+
+## Arming refuses when the CLI the poll needs is absent, and arms nothing
+
+$ PATH=<search path with no gerrit-axi> bin/fm-pr-check.sh no-gerrit-axi https://review.internal/c/group/apps/console/+/4200
+error: watching a Gerrit change requires gerrit-axi on PATH
+$ echo $?
+1
+$ ls <lab>/state/no-gerrit-axi.check.sh
+ls: cannot access: No such file or directory   # nothing armed
+$ grep -c "^pr=" <lab>/state/no-gerrit-axi.meta
+0
+
+$ PATH=<search path with no gerrit-axi> bash <lab>/state/task-merged.check.sh   # the merged change
+  output: []   # silent, never a false merge
+
+$ PATH=<search path with no jq> bin/fm-pr-check.sh no-jq https://review.internal/c/group/apps/console/+/4200
+error: watching a Gerrit change requires jq on PATH
+$ echo $?
+1
+$ ls <lab>/state/no-jq.check.sh
+ls: cannot access: No such file or directory   # nothing armed
+$ grep -c "^pr=" <lab>/state/no-jq.meta
+0
+
+$ PATH=<search path with no jq> bash <lab>/state/task-merged.check.sh   # the merged change
+  output: []   # silent, never a false merge
+
