@@ -12,7 +12,9 @@
 # ... - needs attention" warning rather than a quiet drift. Nothing is ever forced,
 # stashed, or discarded.
 # Still skips (benignly) local-only/no-origin projects, missing remotes/branches,
-# and fetch failures.
+# and fetch failures. A project whose registry entry bin/fm-project-mode.sh
+# refuses is skipped too, naming that command so its refusal is readable, rather
+# than synced under a guessed posture.
 # A candidate under projects/ must be the root of its own work tree: git discovery
 # walks up, so a plain nested directory would otherwise resolve to the enclosing
 # repository (the firstmate checkout) and be synced under that directory's label.
