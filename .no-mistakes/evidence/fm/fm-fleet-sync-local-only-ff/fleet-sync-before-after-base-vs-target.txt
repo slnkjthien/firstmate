@@ -1,0 +1,20 @@
+# fm-fleet-sync local-only behavior: before (base 259a669) vs after (aa01dc9)
+
+## At the base commit, each new local-only scenario hits the old early return:
+test_local_only_fast_forwarded                -> iota: skipped: local-only project
+test_local_only_prune_skipped                 -> iotaprune: skipped: local-only project
+test_local_only_unsafe_reported_not_forced    -> iotastuck: skipped: local-only project
+test_local_only_ahead_is_not_stuck            -> iotaahead: skipped: local-only project
+test_local_only_diverged_still_stuck          -> iotafork: skipped: local-only project
+test_local_only_ahead_detached_recovers       -> iotaheal: skipped: local-only project
+
+## At the target commit, the whole suite passes:
+ok - local-only clone's default branch is fast-forwarded
+ok - local-only clone keeps its gone-upstream branches (pruning stays skipped)
+ok - a normal clone still prunes gone-upstream branches
+ok - an unsafe local-only clone is reported STUCK and left untouched
+ok - a local-only clone strictly ahead of origin is not reported STUCK
+ok - a genuinely diverged local-only clone is still reported STUCK
+ok - a normal clone ahead of origin is still reported STUCK
+ok - a local-only clone ahead of origin still self-heals a detached HEAD
+ok - a normal clone ahead of origin still refuses the detached-HEAD self-heal

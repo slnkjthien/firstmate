@@ -1,0 +1,84 @@
+
+========== S1  A drifted local-only clone catches up (the intent's headline) ==========
+registry entry : - gerritproj [local-only] - live drive project (added 2026-09-21)
+posture        : local-only off
+clone main     : C0 initial
+origin main    : C3 upstream change 3
+clone's origin/main (stale, not yet fetched): C0 initial
+
+$ FM_HOME=/tmp/fm-live-lab/s1 bin/fm-fleet-sync.sh gerritproj
+  gerritproj: synced 970007d..bdb05ba
+
+clone main     : C3 upstream change 3
+behind origin  : 0 commits
+checked out    : main, file.txt = v3
+
+========== S2  Session start (bin/fm-bootstrap.sh) refreshes it too, silently ==========
+clone main before session start : C0 initial   (origin main is C2 upstream change 2)
+
+$ FM_HOME=/tmp/fm-live-lab/s2 bin/fm-bootstrap.sh   | grep FLEET_SYNC
+
+behind origin after session start  : 0 commits
+clone main                         : C2 upstream change 2
+
+========== S3  A landed local-only clone (fm-merge-local.sh) reads as current, not STUCK ==========
+
+$ FM_HOME=/tmp/fm-live-lab/s3 bin/fm-merge-local.sh live-land-1   (captain-approved local landing)
+  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ●  WATCHER DOWN - SUPERVISION IS OFF
+  ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+  ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+  ●  This is a supervision warning only; the guarded operation WILL still run.
+  ●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  merged fm/live-land-1 into local main (0fc1a99 -> f18a491) in /tmp/fm-live-lab/s3/projects/landedproj
+clone main now : L1 approved local delivery  (ahead of origin by 1)
+
+$ FM_HOME=/tmp/fm-live-lab/s3 bin/fm-fleet-sync.sh landedproj
+  WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+  landedproj: already current (1 local commits ahead of origin/main)
+
+clone main after sync : L1 approved local delivery
+HEAD unmoved          : yes
+landed file survives  : crewmate delivery
+
+========== S4  ADVERSARIAL: local-only clones that are NOT safe are never touched ==========
+
+$ FM_HOME=/tmp/fm-live-lab/s4 bin/fm-fleet-sync.sh   (whole fleet)
+  branchproj: STUCK: on branch captain-experiment, 1 commits behind origin/main - needs attention
+  dirtyproj: STUCK: on branch main with uncommitted changes, 1 commits behind origin/main - needs attention
+  forkproj: STUCK: on diverged main, 1 commits behind origin/main - needs attention
+
+dirty clone edit intact   : yes
+branch clone HEAD unmoved : yes (on captain-experiment)
+forked clone HEAD unmoved : yes
+
+$ FM_HOME=/tmp/fm-live-lab/s4 bin/fm-bootstrap.sh   | grep FLEET_SYNC   (what the captain sees at session start)
+  FLEET_SYNC: branchproj: STUCK: on branch captain-experiment, 1 commits behind origin/main - needs attention
+  FLEET_SYNC: dirtyproj: STUCK: on branch main with uncommitted changes, 1 commits behind origin/main - needs attention
+  FLEET_SYNC: forkproj: STUCK: on diverged main, 1 commits behind origin/main - needs attention
+
+========== S5  ADVERSARIAL: branch pruning stays OFF for local-only, ON elsewhere ==========
+
+$ FM_HOME=/tmp/fm-live-lab/s5 bin/fm-fleet-sync.sh   (whole fleet)
+  prunelocal: already current
+  prunenormal: pruned feature
+  prunenormal: already current
+
+local-only kept its 'feature' branch : yes
+normal clone pruned 'feature'        : yes
+
+========== S6  A detached HEAD on a landed local-only clone self-heals honestly ==========
+clone HEAD state : detached at C0 initial, main = L1 landed locally
+
+$ FM_HOME=/tmp/fm-live-lab/s6 bin/fm-fleet-sync.sh healproj
+  healproj: recovered: re-attached main (1 local commits ahead of origin/main)
+
+HEAD re-attached to : main
+landed commit kept  : yes
+
+========== S7  ADVERSARIAL: the exemption did not leak to other postures ==========
+
+$ FM_HOME=/tmp/fm-live-lab/s7 bin/fm-fleet-sync.sh pushproj   (same shape, non-local-only posture)
+  pushproj: STUCK: on diverged main, 0 commits behind origin/main - needs attention
+HEAD unmoved : yes
