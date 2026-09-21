@@ -17,8 +17,7 @@
 #   a project registered forge=gerrit refuses --yolo on and refuses --mode
 #   direct-PR outright, and refuses a brief that does not carry the forge, since
 #   that brief would tell the worker to open a pull request the forge does not
-#   have. A forge-bound brief on a project with no registered forge is announced
-#   and allowed. A
+#   have. A
 #   ship or scout spawn also refuses leftover `{TASK}` / `{FIRSTMATE_SPEC}`
 #   placeholders, an empty Task, an incomplete pair of Task subsections, or a
 #   `## Captain's intent` line opening with a Captain label or address.
@@ -2826,24 +2825,18 @@ EOF
     exit 1
   fi
   if [ "$STANDING_FORGE" = gerrit ] && [ "$MODE" = direct-PR ]; then
-    echo "error: $ID cannot ship mode=direct-PR: $PROJ_NAME is registered forge=gerrit and that mode's definition of done is a pull request this forge does not have; ship no-mistakes for the review loop, or local-only to stop at a ready branch" >&2
+    echo "error: $ID cannot ship mode=direct-PR: $PROJ_NAME is registered forge=gerrit and that mode's definition of done is a pull request this forge does not have; ship no-mistakes, which is how every task on this forge reaches review" >&2
     exit 1
   fi
-  # The dangerous direction is asymmetric, so the checks are too. A Gerrit project
-  # launched on a no-mistakes brief that does not carry the forge hands the worker
-  # the PR contract: it would be told to open a pull request and report checks
-  # green on a server that has neither. Re-scaffold instead. No other mode reaches
-  # here carrying that contract - direct-PR is refused outright above, and a
-  # local-only brief already ends at a ready branch whether or not it names the
-  # forge. The reverse - a forge-bound brief on a project registered without one -
-  # only stops the worker at a ready branch, which is safe, so it is announced and
-  # allowed like a rigor deviation.
+  # A Gerrit project launched on a no-mistakes brief that does not carry the forge
+  # hands the worker the PR contract: it would be told to open a pull request and
+  # report checks green on a server that has neither. Re-scaffold instead. No other
+  # mode reaches here carrying that contract - direct-PR is refused outright above,
+  # and a local-only brief already ends at a ready branch whether or not it names
+  # the forge.
   if [ "$STANDING_FORGE" = gerrit ] && [ "$MODE" = no-mistakes ] && [ "$BRIEF_FORGE" != gerrit ]; then
     echo "error: forge mismatch for $ID: $PROJ_NAME is registered forge=gerrit but $SOURCE_BRIEF records ${BRIEF_FORGE:-no forge}; keep the filled ## Captain's intent and ## Firstmate spec bodies, remove $SOURCE_BRIEF, re-scaffold it with fm-brief.sh $ID $PROJ_NAME --mode $MODE --forge gerrit, then re-fill those two subsections, so the worker is not told to open a pull request this forge does not have" >&2
     exit 1
-  fi
-  if [ "$BRIEF_FORGE" = gerrit ] && [ "$STANDING_FORGE" != gerrit ]; then
-    echo "notice: $ID ships on a brief recording forge=gerrit while $PROJ_NAME carries no registered forge - the worker will stop at a ready branch and open no PR; register the binding or re-scaffold if that is not intended" >&2
   fi
   # The registry holds the captain's standing posture, so dropping below it is
   # allowed (a current explicit captain instruction wins) but never silent. An

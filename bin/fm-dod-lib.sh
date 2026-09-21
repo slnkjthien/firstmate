@@ -22,9 +22,11 @@
 # report ready. That custody requirement is the whole reason the forge binding is
 # code: a passed run whose fixes stayed in the gate is indistinguishable from one
 # whose fixes arrived, and publishing the first ships the unfixed code.
-# forge=gerrit is a no-op for local-only, whose contract already ends at a ready
-# branch, and is refused for direct-PR, whose entire contract is a pull request
-# the forge does not have.
+# forge=gerrit changes nothing in the local-only contract, which already ends at
+# a ready branch and publishes nothing, so it is not a route to the review
+# server; no-mistakes is how a task on this forge reaches review. The binding is
+# refused for direct-PR, whose entire contract is a pull request the forge does
+# not have.
 # This file is the one owner of the no-mistakes `--intent` contract: only the
 # brief's `## Captain's intent` subsection plus later captain words, never
 # `## Firstmate spec` and never the worker's own tradeoffs.
@@ -85,7 +87,7 @@ fm_forge_valid_for_mode() {  # <forge> <mode> <caller>
       return 1 ;;
   esac
   if [ "$forge" = gerrit ] && [ "$mode" = direct-PR ]; then
-    echo "error: $caller: forge=gerrit cannot ship mode=direct-PR - that mode's definition of done is a pull request this forge does not have; ship no-mistakes for the review loop, or local-only to stop at a ready branch" >&2
+    echo "error: $caller: forge=gerrit cannot ship mode=direct-PR - that mode's definition of done is a pull request this forge does not have; ship no-mistakes, which is how every task on this forge reaches review" >&2
     return 1
   fi
   return 0

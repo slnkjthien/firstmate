@@ -984,6 +984,24 @@ ROWS
     "the refusal did not say why the mode slot could not take that token"
   assert_contains "$err" '"forge=gerrit"' "the refusal did not name the token that binds a forge"
 
+  # "none" is the parser's internal name for no registered forge, not a registry
+  # spelling, so the mode-slot refusal must not prescribe writing "forge=none" -
+  # an operator who followed that would register a third spelling of "unbound".
+  printf '%s\n' '- fp [none] - fixture (added 2026-01-01)' > "$home/data/projects.md"
+  out=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>/dev/null)
+  status=$?
+  [ "$status" -ne 0 ] || fail "a bare none in the mode slot resolved to a posture (got '$out')"
+  [ -z "$out" ] || fail "a refused mode-slot none still handed the caller a posture: '$out'"
+  err=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>&1 >/dev/null) || true
+  assert_contains "$err" 'is a forge rather than a delivery mode' \
+    "the refusal did not say why the mode slot could not take that token"
+  assert_not_contains "$err" '"forge=none"' \
+    "the refusal prescribed a registry spelling the forge check does not document"
+  printf '%s\n' '- fp [no-mistakes forge=none] - fixture (added 2026-01-01)' > "$home/data/projects.md"
+  out=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>/dev/null) \
+    || fail "forge=none stopped resolving, so the refusal above must keep steering away from it"
+  [ "$out" = "no-mistakes off none" ] || fail "forge=none resolved to something other than unbound (got '$out')"
+
   printf '%s\n' '- fp [no-mistakes +yolo forge=gerrit] - fixture (added 2026-01-01)' > "$home/data/projects.md"
   out=$(FM_HOME="$home" "$PROJECT_MODE" fp 2>/dev/null)
   [ "$out" = "no-mistakes off gerrit" ] || fail "the accepted token set stopped resolving (got '$out')"
@@ -1098,9 +1116,8 @@ test_forge_gerrit_changes_what_no_mistakes_means() {
 # direction that is actually dangerous: a Gerrit project launched on a brief that
 # does not carry the forge would tell the worker to open a pull request and report
 # green checks on a server that has neither, which is the hand-written per-brief
-# delivery section this binding replaces. The reverse only stops a worker at a
-# ready branch, so it is announced and allowed like a rigor deviation. A mode
-# whose whole definition of done is a pull request is refused outright.
+# delivery section this binding replaces. A mode whose whole definition of done is
+# a pull request is refused outright.
 test_spawn_requires_the_brief_to_carry_the_registered_forge() {
   local rec home proj fakebin out status
   rec=$(make_home forge-agree-gerrit "- proj [no-mistakes forge=gerrit] - fixture (added 2026-01-01)")
@@ -1144,19 +1161,7 @@ EOF
   assert_not_contains "$out" "forge mismatch" \
     "a local-only launch on a bound project was refused for a contract it never carries"
 
-  rec=$(make_home forge-agree-plain "- proj [no-mistakes] - fixture (added 2026-01-01)")
-  IFS='|' read -r home proj fakebin <<EOF
-$rec
-EOF
-  FM_HOME="$home" "$BRIEF" forge-agree-b1 proj --mode no-mistakes --forge gerrit >/dev/null \
-    || fail "a gerrit ship brief should scaffold"
-  fill_brief_subsections "$home/data/forge-agree-b1/brief.md" "Run the review loop." "Ship it."
-  out=$(run_spawn "$home" "$fakebin" forge-agree-b1 "$proj" claude --mode no-mistakes --yolo off 2>&1)
-  assert_contains "$out" "carries no registered forge" \
-    "a forge-bound brief on an unbound project was not announced"
-  assert_not_contains "$out" "forge mismatch" \
-    "the safe direction was refused instead of announced"
-  pass "fm-spawn: a registered forge must reach the worker's brief, and only the safe direction is advisory"
+  pass "fm-spawn: a registered forge must reach the worker's brief"
 }
 
 # The registry is hand-edited markdown, so a one-character typo in the forge token

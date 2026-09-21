@@ -141,7 +141,12 @@ forge_is_known() {  # <value>
   return 1
 }
 if forge_is_known "$mode"; then
-  echo "refused: \"$mode\" is a forge rather than a delivery mode, and it stands in the mode slot of the annotation registered for $NAME in $REG; a forge binds only through its own token, so write \"forge=$mode\" beside the delivery mode; correct the registry entry" >&2
+  if [ "$mode" = none ]; then
+    remedy="\"none\" is not a registry spelling at all, so drop the token and leave the delivery mode alone"
+  else
+    remedy="a forge binds only through its own token, so write \"forge=$mode\" beside the delivery mode"
+  fi
+  echo "refused: \"$mode\" is a forge rather than a delivery mode, and it stands in the mode slot of the annotation registered for $NAME in $REG; $remedy; correct the registry entry" >&2
   exit 3
 fi
 case "$mode" in
