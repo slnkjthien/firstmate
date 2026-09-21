@@ -449,13 +449,14 @@ Invoked in a primary home, `/stow` then cascades the same sweep to every registe
 
 ## Local clones stay fresh
 
-The locked session-start deferred network stage, PR-based teardown, and merged-PR wake handling refresh every project clone that has an origin remote, when the clone is safe to move.
+The locked session-start deferred network stage refreshes every project clone that has an origin remote, when the clone is safe to move.
+PR-based teardown and merged-PR wake handling refresh only the one clone their task belongs to, and both skip a `local-only` task entirely, so an approved `bin/fm-merge-local.sh` landing never refreshes its own clone; that clone catches up at the next session start like any other.
 Wake-time refreshes can target a single clone by project name, so the primary home also catches up when a secondmate reports a merge from its own home.
 Clean default-branch clones fast-forward to `origin/<default>`, and a clean detached HEAD that holds no unique commits is re-attached to the default branch before the same fast-forward path runs.
 Dirty clones, non-default branches, detached HEADs with unique commits, diverged defaults, and default branches checked out in another worktree are reported as `STUCK:` with their behind count and left untouched.
 Fetches blocked by an orphaned `.git/packed-refs.lock` use bounded retries and remove the lock only when the shared staleness proof can prove it abandoned; [configuration.md](configuration.md#toolchain) owns the recovery details and tuning knobs.
 Clones without an origin remote and fetch failures remain benign skips.
-A `local-only` clone is refreshed like any other, because that guarded fast-forward is equally safe on a clone firstmate never pushes to.
+The session-start stage does refresh a `local-only` clone, because that guarded fast-forward is equally safe on a clone firstmate never pushes to.
 Only its branch pruning is skipped, since an upstream that is gone cannot mean "the PR merged" where firstmate never published, and a default branch strictly ahead of `origin/<default>` is the landed steady state of an approved `bin/fm-merge-local.sh` landing rather than a divergence, so it is reported as current instead of `STUCK:`.
 The refresh also prunes local branches whose remote is gone and that no worktree still needs.
 
