@@ -227,17 +227,17 @@ With forks, proposing needs no write access to the target repository at all, bec
 On Gerrit, proposing requires push access to `refs/for/*` on the one shared repository, so an autonomous worker's identity cannot be confined to a namespace of its own; it holds a grant on the repository everyone else shares.
 That is the provisioning consequence, and it is why the vote boundary in section 5 matters more here rather than less: an identity that can already reach the shared repository is held back only by the grants its account does not hold, so the label permissions on that account carry weight a separate namespace would otherwise share.
 
-**No tool available today can submit.**
+**No tool Firstmate calls today can submit.**
 `gerrit-axi` is read-only by construction.
 Its README states the boundary - "v0.1 is read-only. It never votes, replies, sets reviewers or topics, submits, abandons, or pushes. Every operation is a query." - and its own test suite enforces it by grepping for mutating REST verbs and mutating SSH subcommands.
 Its entire surface is `status`, `show`, `comments`, and `auth status`.
 But the refusal Firstmate is designed to carry is stated as policy rather than capability, and like the registry forge field it is in review rather than current behavior.
 Today a Gerrit change URL is rejected only because `bin/fm-pr-lib.sh` cannot parse it into a provider identity, which is a capability limit and not a policy.
 What the designed refusal protects is the decisive vote rather than the submit: a submit only succeeds once someone has recorded a `Code-Review+2`, and that vote is a positive attributed claim that a named human approved, read as such by colleagues and by any audit of the repository.
-A server that permits self-approval is exactly what makes this a boundary Firstmate chooses rather than one it merely runs into.
+A server that permits self-approval is exactly what makes this a boundary Firstmate chooses rather than one it merely runs into, though the choice covers only Firstmate's own path: the server's label ACL on the worker account is what makes it binding on anything else.
 
 So the first two are Gerrit's shape, and the third is the current toolchain plus a deliberate policy that is designed but not yet landed.
-Only the toolchain half could be removed by writing code, and until the policy lands the toolchain half is the only half that exists; whether it should be removed is section 5.
+Only the toolchain half could be removed by writing code, and until the policy lands the toolchain half is the only tool-side guard that exists, with the worker account's server-side label ACL behind it; section 5 argues that control and whether the toolchain half should be removed.
 
 ## 5. Where responsibility sits: Firstmate or the forge tool
 
