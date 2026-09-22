@@ -247,7 +247,7 @@ That is exactly the attributed-claim problem section 4 identifies, a positive cl
 It is also why the server permitting self-approval makes this a policy boundary rather than a capability limit: the server will not stop it, so something else has to.
 In the designed end state two independent facts hold that line: Firstmate refuses, and the tool is incapable.
 Today only the second is real, because Firstmate's policy refusal is unlanded.
-That raises the stakes on relaxing `gerrit-axi` rather than lowering them: granting it powers now would remove the only guard that currently exists, not the second of two.
+That raises the stakes on relaxing `gerrit-axi` rather than lowering them: granting it decisive-vote powers now would remove the only guard that currently exists, not the second of two.
 
 So the trade is not publish against submit.
 It is publish and submit on one side, where the server itself is the enforcement, against decisive voting on the other, where nothing is.
