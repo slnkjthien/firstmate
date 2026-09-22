@@ -125,7 +125,7 @@ That is the whole of what a `forge=` annotation buys: **a pre-publication signal
 Everything downstream of publication - watching, reading state, reporting - continues to work off the provider tag derived from the URL, exactly as it does for GitLab, because by then the URL exists.
 
 This also frames a live question this note does not settle: should the forge be *detected* from the project's origin rather than declared in the registry?
-Every other forge effectively is detected, in the sense that the URL tells Firstmate what it is dealing with; the intake guidance already treats a protocol fact such as an SSH remote on port 29418 or a `refs/for/<branch>` push target as good evidence to propose the binding while refusing to infer it later.
+Every other forge effectively is detected, in the sense that the URL tells Firstmate what it is dealing with; the intake guidance proposed in the same in-review delivery-mode design treats a protocol fact such as an SSH remote on port 29418 or a `refs/for/<branch>` push target as good evidence to propose the binding while refusing to infer it later.
 What a declaration buys over detection is that the signal is in the brief at scaffold time, with no clone read and no network call, which is where a pre-publication signal has to be.
 What it costs is a second source of truth that can disagree with the remote, and disagree silently, since a mis-declared forge produces a brief that is internally consistent and wrong.
 
