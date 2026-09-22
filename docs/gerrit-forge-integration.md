@@ -2,7 +2,7 @@
 
 This note is the design reasoning for giving Firstmate a forge axis, worked through Gerrit because Gerrit is the case that forces it.
 It is written for whoever integrates a forge with Firstmate rather than for the operator of any one fleet, so it argues about axes, vocabulary, and ownership, and never about which projects should be registered how.
-Several questions in it are the captain's to settle and are left open on purpose; they are collected at the end.
+Where a question has been settled the decision is stated in the body rather than left standing as a question; the two that remain open are collected at the end.
 
 The mechanics it reasons about have their own owners.
 [`bin/fm-pr-lib.sh`](../bin/fm-pr-lib.sh) owns the provider-tagged identity and the merge-poll artifacts, [`bin/fm-pr-merge.sh`](../bin/fm-pr-merge.sh) owns merging, [`bin/fm-project-mode.sh`](../bin/fm-project-mode.sh) owns the registered delivery posture, and [`bin/fm-dod-lib.sh`](../bin/fm-dod-lib.sh) owns what a delivery mode tells a worker.
@@ -124,10 +124,33 @@ A worker cannot be told "push your branch and open a pull request, and we will w
 That is the whole of what a `forge=` annotation buys: **a pre-publication signal, where GitLab only ever needed a post-publication one.**
 Everything downstream of publication - watching, reading state, reporting - continues to work off the provider tag derived from the URL, exactly as it does for GitLab, because by then the URL exists.
 
-This also frames a live question this note does not settle: should the forge be *detected* from the project's origin rather than declared in the registry?
-Every other forge effectively is detected, in the sense that the URL tells Firstmate what it is dealing with; the intake guidance proposed in the same in-review delivery-mode design treats a protocol fact such as an SSH remote on port 29418 or a `refs/for/<branch>` push target as good evidence to propose the binding while refusing to infer it later.
-What a declaration buys over detection is that the signal is in the brief at scaffold time, with no clone read and no network call, which is where a pre-publication signal has to be.
-What it costs is a second source of truth that can disagree with the remote, and disagree silently, since a mis-declared forge produces a brief that is internally consistent and wrong.
+### How the forge is known: detected, then proposed for confirmation
+
+The binding is **detected from the project's origin and proposed at intake for confirmation**, rather than declared cold in the registry or inferred silently at use time.
+Detection is what every other forge already gets for free, because the URL tells Firstmate what it is dealing with.
+Confirmation is what stops a wrong guess from becoming a silent second source of truth, since a mis-detected forge produces a brief that is internally consistent and wrong.
+Proposing it at intake also puts the signal where a pre-publication signal has to be, in the brief at scaffold time with no clone read and no network call, while keeping a human at the one point where the evidence can be misread.
+The in-review delivery-mode design already takes that shape, treating a protocol fact such as an SSH remote on port 29418 or a `refs/for/<branch>` push target as good evidence to propose the binding while refusing to infer it later.
+
+#### Could the tool declare its own semantics instead?
+
+That settles where the binding comes from without settling whether a project-level binding is needed at all.
+Suppose the forge tool answered the question itself: a `forge-type` subcommand on `gerrit-axi` returning `change`, where a GitHub or GitLab tool would return `branch`.
+The appeal is real, and the reasoning behind it is sound as far as it goes.
+The origin URL already selects which tool to call, the tool then declares its own semantics, and no project ever carries an annotation that can drift from its remote.
+
+Be precise about what that removes and what it does not.
+It removes the per-project declaration, which is the part capable of disagreeing with reality.
+It does not remove the mapping, because something must still get from a remote URL to the right tool before any tool can be asked anything, and that something is Firstmate.
+The question is therefore not whether Firstmate holds forge knowledge, since it does either way, but whether it holds one thin host-pattern mapping for the whole fleet or one annotation per project.
+
+Framed that way the mapping looks like the better shape, for a reason that has nothing to do with Gerrit.
+A host pattern is written once and is then either wrong for every project on that host or right for every project on it, which is a failure mode that announces itself on first use.
+A per-project annotation is written once per project and can be wrong on exactly one of them, which is the failure mode that does not announce itself at all.
+The cost is a round trip, because asking the tool means running it, so the answer stops being available at scaffold time without a call, which is the property the pre-publication signal needed to begin with.
+Caching the answer recovers that and reintroduces, in smaller form, the staleness the annotation had.
+
+This remains open, and two decisions in section 5 name it as their dependency.
 
 ### Applying "mode is where the worker stops"
 
@@ -184,41 +207,61 @@ Not the artifact's creation, not its URL shape beyond parsing it back into an id
 The forge property Firstmate carries for GitLab is no property at all, only a tag read off a URL.
 
 The question this raises for Gerrit is whether the stack-versus-squash glue belongs on the same side of that line.
+**It does: the shape mechanics live in the forge tool.**
+That decision carries an open dependency, named in section 3, because a tool that declares its own semantics and a tool that merely executes them are different amounts of tool.
 
-The case for moving it into the forge tool is that it is forge mechanics through and through.
+The case for it is that this is forge mechanics through and through.
 Producing a stack of changes under a topic means giving each commit a `Change-Id`, pushing once to `refs/for/<branch>` with a topic option, and reasoning about the parent chain that makes the stack a stack.
 None of that is a Firstmate concept, and every line of it Firstmate writes is a line Firstmate maintains on behalf of one forge.
 Move it and Firstmate's job shrinks back to "know which tool, call it", which is exactly what it already is everywhere else.
 
-The case against is not a matter of scope, and stating it as scope would understate it.
-This is not the same trade as GitLab.
-`glab` already had merge powers when Firstmate adopted it, so calling it cost nothing in blast radius that was not already being spent.
-`gerrit-axi` is safe *by construction*, and its safety is enforced rather than asserted - the read-only property is a test in its own suite, not a convention in its documentation.
-Giving it publish and submit powers does not extend a capability it already has; it removes the property that makes it safe to call from an autonomous agent without a confirmation step.
-The tool that cannot vote today would become the tool that can.
+### Does the pipeline need to know?
 
-Two independent facts hold the boundary in section 4 today: Firstmate refuses, and the tool is incapable.
-That change would reduce it to one.
-A structural guarantee would become a procedural one.
-That is the trade to weigh, and it is the captain's call, not a detail of where code lives.
+The strongest objection is that the no-mistakes pipeline, not Firstmate, is what runs at delivery time, so hiding forge mechanics inside a forge tool only helps if the pipeline can call that tool.
+The objection is right about the mechanism.
+no-mistakes does own publication: `push`, `pr`, and `ci` are its own pipeline steps, sitting alongside `review`, `test`, `document`, and `lint`, and a run reports each of them independently.
 
-A middle position deserves weighing alongside the other two, because the shape glue does not need the dangerous half.
-Publishing a change for review is reversible in a way submitting is not: a published change can be abandoned, and until someone votes, nothing has been claimed on anyone's behalf.
-Publish powers without submit powers would let the shape mechanics move while leaving the attributed-approval boundary held by incapability rather than by policy alone.
+It does not defeat the answer, because on a Gerrit project those are precisely the steps that do not run.
+The in-review delivery design has a `forge=gerrit` worker pass `--skip push,pr,ci` on every run and skip nothing else, keeping `review`, `test`, `document`, and `lint` as the whole point of the run.
+Publication then moves out of the pipeline entirely: the worker stops at a ready branch, and Firstmate pushes it to the review server.
+So the caller of the forge tool is Firstmate or the worker, never no-mistakes, and the pipeline never has to know `gerrit-axi` exists.
+The objection's premise holds everywhere the pipeline publishes, and a Gerrit project is the one place it does not.
 
-The second open question - whether `gerrit-axi`'s deliberate read-only stance should be reconsidered at all, given it was built to fill this same gap - is the same question approached from the tool's end rather than from Firstmate's.
-Answering either one answers most of the other, which is a reason to take them together rather than in sequence.
+### What powers the tool needs
 
-Whichever way that goes, one question is already open and is not touched by it.
+`gerrit-axi` is read-only by construction today, so the shape mechanics cannot move into it as it stands.
+**It gains publish and submit powers**, under the same open dependency.
+
+Getting the risk boundary right matters more than the decision, because the intuitive cut is the wrong one.
+The natural reading, and the one recommended earlier in this design, puts the boundary between publish and submit: publishing is reversible, submitting is not, so grant publish and withhold submit.
+Evidence supersedes that reading rather than merely outweighing it.
+Gerrit computes submittability on the server, independently of who asks.
+A change observed on a live server with its `Verified` label satisfied and every other gate passed still reports `submittable: false` and `blocked_on: Code-Review` for as long as no human has voted, and a submit call against it fails there.
+Granting submit therefore moves much less risk than it appears to, because what is being granted is the ability to ask a server that will refuse.
+
+The hazard concentrates one step earlier, in **decisive voting**.
+A tool that can record `Code-Review+2` lets an agent manufacture the approval and then submit legitimately against it, and at that point every gate really is satisfied and nothing anywhere records that no human ever approved.
+That is exactly the attributed-claim problem section 4 identifies, a positive claim that a named human approved, read as such by colleagues and by any audit of the repository.
+It is also why the server permitting self-approval makes this a policy boundary rather than a capability limit: the server will not stop it, so something else has to.
+
+So the trade is not publish against submit.
+It is publish and submit on one side, where the server itself is the enforcement, against decisive voting on the other, where nothing is.
+A non-decisive `Code-Review+1` sits between them and deserves to be considered on its own terms, since it records an opinion without satisfying the gate.
+
+### Watching a stack
+
 The merge poll watches one change number, and a stack is several changes, so grouping them by topic is the obvious handle.
-Topic membership is mutable on the server, which makes a watch keyed on a topic a watch keyed on something anyone with access can change out from under it.
-That is a captain call and stays open here.
+Topic membership is mutable on the server, though, so a watch keyed on a topic alone is keyed on something anyone with access can change out from under it.
+
+The resolution is to **pin the membership and detect growth rather than follow it**.
+Record the change numbers the stack had when the watch was armed, keep watching exactly those, and re-read the topic only to notice that it no longer matches.
+A change that appears or disappears is then reported as a change to the thing being watched, instead of being absorbed silently into it.
+That keeps the watch's subject fixed, which is what makes a merged verdict mean anything, while still surfacing the case a bare pin would hide: someone adding a change to the stack after the watch was armed.
 
 ## Open questions
 
-Each of these is argued above and settled nowhere.
+Two remain.
+Both section 5 decisions name the first as their dependency.
 
-1. Is the forge declared in the registry or detected from the project's origin? (Section 3.)
-2. Do the stack-versus-squash mechanics live in Firstmate or in the forge tool? (Section 5.)
-3. Should `gerrit-axi`'s read-only stance be reconsidered, and if so, does it gain publish powers, or publish and submit? (Sections 4 and 5.)
-4. How is a stack watched, when the only natural grouping handle is mutable on the server? (Section 5.)
+1. Would a `forge-type` subcommand on the forge tool remove the need for a project-level forge binding, and is one host-pattern mapping held in Firstmate materially better than one annotation per project? (Section 3.)
+2. Should the forge tool be able to vote at all, and if so, only non-decisively? A decisive `Code-Review+2` is where the attributed-approval hazard actually sits, not at submit. (Section 5.)
