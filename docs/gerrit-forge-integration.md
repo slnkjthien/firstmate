@@ -168,10 +168,10 @@ It removes the per-project declaration, which is the part capable of disagreeing
 It does not remove the mapping, because something must still get from a remote URL to the right tool before any tool can be asked anything, and that something is Firstmate.
 The question is therefore not whether Firstmate holds forge knowledge, since it does either way, but whether it holds one thin host-pattern mapping for the whole fleet or one annotation per project.
 
-Framed that way the mapping looks like the better shape, for a reason that has nothing to do with Gerrit.
+Framed that way the mapping has a real advantage, for a reason that has nothing to do with Gerrit.
 A host pattern is written once and is then either wrong for every project on that host or right for every project on it, which is a failure mode that announces itself on first use.
-A per-project annotation is written once per project and can be wrong on exactly one of them, which is the failure mode that does not announce itself at all.
-The cost is a round trip, because asking the tool means running it, so the answer stops being available at scaffold time without a call, which is the property the pre-publication signal needed to begin with.
+A per-project annotation can be wrong on exactly one project, which left alone is the failure mode that does not announce itself; intake confirmation is what closes it, because that one project's binding is put in front of a human at the moment it is recorded.
+Asking the tool has a cost on the other side: a round trip, because asking the tool means running it, so the answer stops being available at scaffold time without a call, which is the property the pre-publication signal needed to begin with.
 Caching the answer recovers that and reintroduces, in smaller form, the staleness the annotation had.
 
 The answer is to keep a per-project binding and not to ask the tool.
@@ -225,7 +225,7 @@ This is also a property of Gerrit.
 The absence of forks also changes who needs what access.
 With forks, proposing needs no write access to the target repository at all, because the proposer writes only their own copy.
 On Gerrit, proposing requires push access to `refs/for/*` on the one shared repository, so an autonomous worker's identity cannot be confined to a namespace of its own; it holds a grant on the repository everyone else shares.
-That is the provisioning consequence, and it is why the vote boundary in section 5 matters more here rather than less: when an identity can already reach the shared repository, the limits it does not hold are the only limits there are.
+That is the provisioning consequence, and it is why the vote boundary in section 5 matters more here rather than less: an identity that can already reach the shared repository is held back only by the grants its account does not hold, so the label permissions on that account carry weight a separate namespace would otherwise share.
 
 **No tool available today can submit.**
 `gerrit-axi` is read-only by construction.
@@ -271,7 +271,10 @@ The objection's premise holds everywhere the pipeline publishes, and a Gerrit pr
 That answer is contingent, though, and reading it as structural would be a mistake.
 The pipeline can be kept ignorant of the forge tool only because it has no Gerrit support to exercise: its `Provider` type names six forges and none of them is Gerrit, so its publication steps could not work against one.
 The skip exists because those steps cannot function, not because publication belongs outside the pipeline on principle.
-Add Gerrit to that provider set and the skip disappears, the pipeline publishes natively, and the question of who calls the forge tool reopens.
+The push model would have to change too, not merely be switched on.
+The pipeline pushes to a fork: this repository's own run records its push target as `kind=fork` against a personal GitHub URL while `origin` is the upstream repository.
+A forkless forge has nowhere for that model to put anything, so Gerrit support there means a push step that targets `refs/for/<branch>` on the one shared repository rather than a fork it does not have.
+Add Gerrit to that provider set with that push step and the skip disappears, the pipeline publishes natively, and the question of who calls the forge tool reopens.
 
 ### What powers the tool needs
 
@@ -286,20 +289,28 @@ A change observed on a live server with its `Verified` label satisfied and every
 Granting submit therefore moves much less risk than it appears to, because what is being granted is the ability to ask a server that will refuse.
 
 The hazard concentrates one step earlier, in **decisive voting**.
-A tool that can record `Code-Review+2` lets an agent manufacture the approval and then submit legitimately against it, and at that point every gate really is satisfied and nothing anywhere records that no human ever approved.
+An agent that can record `Code-Review+2` can manufacture the approval and then submit legitimately against it, and at that point every gate really is satisfied and nothing anywhere records that no human ever approved.
 That is exactly the attributed-claim problem section 4 identifies, a positive claim that a named human approved, read as such by colleagues and by any audit of the repository.
 It is also why the server permitting self-approval makes this a policy boundary rather than a capability limit: the server will not stop it, so something else has to.
-In the designed end state two independent facts hold that line: Firstmate refuses, and the tool is incapable.
+
+That something is not a tool.
+The SSH connection a worker needs to push to `refs/for/*` also carries `gerrit review`, which accepts `--code-review` scores from -2 to +2, `--label LABEL=VALUE`, and `--submit`, gated only by whether the account holds the label permission and independent of anything `gerrit-axi` supports.
+The durable control is therefore the worker account's server-side label ACL: an identity permitted to push to `refs/for/*` must not hold decisive `Code-Review` permission.
+A read-only tool paired with an account that does hold it is not a boundary at all, only the appearance of one.
+
+Behind that ACL, Firstmate's refusal and the tool's incapability are defence in depth, guarding the tool's own path rather than the account's.
+In the designed end state both hold: Firstmate refuses, and the tool is incapable.
 Today only the second is real, because Firstmate's policy refusal is unlanded.
-That raises the stakes on relaxing `gerrit-axi` rather than lowering them: granting it decisive-vote powers now would remove the only guard that currently exists, not the second of two.
+That raises the stakes on relaxing `gerrit-axi` rather than lowering them: granting it decisive-vote powers now would remove the only tool-side guard that currently exists, not the second of two, and leave the ACL with nothing behind it.
 
 So the trade is not publish against submit.
-It is publish and submit on one side, where the server itself is the enforcement, against decisive voting on the other, where nothing is.
+It is publish and submit on one side, where the server itself is the enforcement, against decisive voting on the other, where only the account's grants are.
 A non-decisive `Code-Review+1` sits between them, since it records an opinion without satisfying the gate.
 
 The line is drawn at the whole of voting rather than at the decisive half.
 A `+1` satisfies no gate, so withholding it costs nothing the mechanics need, and the tool that cannot vote at all needs no one to reason about which votes are safe before each release.
-That matters more on a forkless forge, for the reason section 4 gives: the worker's identity already holds a grant on the shared repository, so its inability to vote is not one guard among several but the specific thing standing between an agent and a manufactured approval.
+Withholding votes from the tool does not replace the ACL; it keeps the tool's own path from being the one that tests it.
+That matters more on a forkless forge, for the reason section 4 gives: the worker's identity already holds a grant on the shared repository, so its account's label permissions are the limit that stands between it and a manufactured approval, and the tool should not be a second way to probe that limit.
 
 ### A third place the mechanics could live
 
@@ -309,21 +320,22 @@ no-mistakes already carries a multi-forge abstraction, with a `Provider` type, p
 
 The case for it is that it removes part of a duplication the other two options create.
 If the pipeline gains Gerrit support while Firstmate also has its own forge tool, `Change-Id` handling, magic-ref pushes, topic stacks and submittability are each implemented independently on both sides.
-Contributing upstream takes the publication mechanics off Firstmate's side: `Change-Id` handling on push and magic-ref publication would live in a pipeline that already knows six forges, rather than in a seventh integration beside it, and that abstraction is both more mature than a new one and shared rather than ours alone.
+Contributing upstream removes that duplication for the pipeline-driven path only: when a `no-mistakes` worker publishes, `Change-Id` handling on push and magic-ref publication would live in a pipeline that already knows six forges, behind the forkless push step the contingent skip above shows it would need, rather than in a seventh integration beside it, and that abstraction is both more mature than a new one and shared rather than ours alone.
 
 It removes only that part.
 The pipeline never merges: its host interface finds, creates and updates pull requests and reads their state, checks and mergeability, and its `ci` step only verifies that a merge happened.
 Merging, the merge poll and the stack watch below stay with Firstmate wherever publication lives, so Firstmate still needs a Gerrit-aware tool, and submittability and topic-stack reasoning still exist on both sides under this option.
-It shrinks the forge tool Firstmate needs rather than replacing it.
+Publication stays there too for the other delivery path: a `direct-PR` worker never runs the pipeline, so its magic-ref push, `Change-Id` handling and topic stack come from Firstmate's own tool whatever the pipeline gains.
+It removes one caller of the forge tool's publication mechanics rather than the mechanics themselves.
 
 The case against is a dependency the other two options do not carry.
 Gerrit support upstream lands when that project decides it lands, at whatever scope its maintainers accept, and a forge needed now cannot be scheduled against someone else's roadmap.
 A tool under our own hand ships when we ship it.
-The honest reading is that the upstream route removes the publication half of the duplication, not all of it, and pays for that with a schedule we do not control.
+The honest reading is that the upstream route removes the publication duplication on the pipeline-driven path, not all of it, and pays for that with a schedule we do not control.
 
 **So: build ours now, contribute upstream later.**
 The two are sequential rather than exclusive, which is what makes the timing objection survivable.
-A forge tool built now ships against a schedule we hold, and its publication mechanics are the part that could later be contributed upstream once they are known to work, at which point Firstmate's own tool narrows to merging, the merge poll and the stack watch.
+A forge tool built now ships against a schedule we hold, and its publication mechanics are the part that could later be contributed upstream once they are known to work, at which point the pipeline-driven path stops calling Firstmate's tool to publish, while `direct-PR` publication, merging, the merge poll and the stack watch stay in it.
 Choosing the upstream route first would have meant waiting; choosing it second costs only that the publication code is written before it is shared.
 
 ### Watching a stack
