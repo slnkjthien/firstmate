@@ -150,6 +150,11 @@ A per-project annotation is written once per project and can be wrong on exactly
 The cost is a round trip, because asking the tool means running it, so the answer stops being available at scaffold time without a call, which is the property the pre-publication signal needed to begin with.
 Caching the answer recovers that and reintroduces, in smaller form, the staleness the annotation had.
 
+There is independent corroboration for the detected shape in the tool with the broadest forge coverage in this stack.
+no-mistakes binds its provider by calling `DetectProvider(remoteURL)` and recognising the host, across all six forges its `Provider` type names - GitHub, GitLab, Bitbucket, Azure DevOps, Forgejo and Gitea - with no per-project declaration anywhere in the scheme.
+Its static detector is documented as recognising providers purely from URL and host text, with no ambient CLI configuration consulted.
+That is the thin host-pattern mapping weighed above, already built and already carrying six forges, which argues for the shape more strongly than Gerrit alone can.
+
 This remains open, and two decisions in section 5 name it as their dependency.
 
 ### Applying "mode is where the worker stops"
@@ -211,6 +216,7 @@ The forge property Firstmate carries for GitLab is no property at all, only a ta
 The question this raises for Gerrit is whether the stack-versus-squash glue belongs on the same side of that line.
 **It does: the shape mechanics live in the forge tool.**
 That decision carries an open dependency, named in section 3, because a tool that declares its own semantics and a tool that merely executes them are different amounts of tool.
+It was also taken before a third candidate home was on the board, and that candidate is argued below.
 
 The case for it is that this is forge mechanics through and through.
 Producing a stack of changes under a topic means giving each commit a `Change-Id`, pushing once to `refs/for/<branch>` with a topic option, and reasoning about the parent chain that makes the stack a stack.
@@ -228,6 +234,11 @@ The in-review delivery design has a `forge=gerrit` worker pass `--skip push,pr,c
 Publication then moves out of the pipeline entirely: the worker stops at a ready branch, and Firstmate pushes it to the review server.
 So the caller of the forge tool is Firstmate or the worker, never no-mistakes, and the pipeline never has to know `gerrit-axi` exists.
 The objection's premise holds everywhere the pipeline publishes, and a Gerrit project is the one place it does not.
+
+That answer is contingent, though, and reading it as structural would be a mistake.
+The pipeline can be kept ignorant of the forge tool only because it has no Gerrit support to exercise: its `Provider` type names six forges and none of them is Gerrit, so its publication steps could not work against one.
+The skip exists because those steps cannot function, not because publication belongs outside the pipeline on principle.
+Add Gerrit to that provider set and the skip disappears, the pipeline publishes natively, and the question of who calls the forge tool reopens.
 
 ### What powers the tool needs
 
@@ -253,6 +264,22 @@ So the trade is not publish against submit.
 It is publish and submit on one side, where the server itself is the enforcement, against decisive voting on the other, where nothing is.
 A non-decisive `Code-Review+1` sits between them and deserves to be considered on its own terms, since it records an opinion without satisfying the gate.
 
+### A third place the mechanics could live
+
+Two homes for the shape mechanics have been weighed so far, Firstmate and a forge tool Firstmate calls.
+There is a third, and it deserves arguing as a peer rather than a footnote, because it was not in view when the choice above was made.
+no-mistakes already carries a multi-forge abstraction, with a `Provider` type, per-provider packages, and a per-repository execution context, and Gerrit support could be contributed there natively following the pattern its six existing providers follow.
+
+The case for it is that it removes a duplication the other two options create.
+If the pipeline gains Gerrit support while Firstmate also has its own forge tool, the mechanics exist twice over: `Change-Id` handling, magic-ref pushes, topic stacks and submittability, implemented independently on each side.
+That is the same duplication moving the mechanics into a forge tool was meant to prevent, arriving by another route.
+Contributing upstream instead leaves Firstmate calling one tool that already knows six forges, rather than standing a seventh integration up beside it, and that abstraction is both more mature than a new one and shared rather than ours alone.
+
+The case against is a dependency the other two options do not carry.
+Gerrit support upstream lands when that project decides it lands, at whatever scope its maintainers accept, and a forge needed now cannot be scheduled against someone else's roadmap.
+A tool under our own hand ships when we ship it.
+The honest reading is that the upstream route is the better one if the timing is acceptable and the worse one if it is not, which makes this a question about urgency rather than about architecture.
+
 ### Watching a stack
 
 The merge poll watches one change number, and a stack is several changes, so grouping them by topic is the obvious handle.
@@ -265,8 +292,9 @@ That keeps the watch's subject fixed, which is what makes a merged verdict mean 
 
 ## Open questions
 
-Two remain.
+Three remain.
 Both section 5 decisions name the first as their dependency.
 
 1. Would a `forge-type` subcommand on the forge tool remove the need for a project-level forge binding, and is one host-pattern mapping held in Firstmate materially better than one annotation per project? (Section 3.)
 2. Should the forge tool be able to vote at all, and if so, only non-decisively? A decisive `Code-Review+2` is where the attributed-approval hazard actually sits, not at submit. (Section 5.)
+3. Does contributing Gerrit support upstream to no-mistakes displace the decision to put the shape mechanics in a forge tool? That option was not in view when the decision was made, and it is the only one of the three that avoids implementing the mechanics twice. (Section 5.)
