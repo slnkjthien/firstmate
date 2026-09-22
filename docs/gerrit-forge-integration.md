@@ -184,7 +184,8 @@ This is a property of Gerrit and no amount of tooling changes it.
 **There is no branch on the remote.**
 `refs/for/<branch>` is a magic ref rather than a destination: the push creates or updates a change and leaves behind no ref a later fetch can see.
 Every mechanism that reasons about a remote branch therefore has no counterpart here - the gone-upstream prune in `bin/fm-fleet-sync.sh`, the remote-reachability leg of `bin/fm-teardown.sh`'s landed-work test, and the `refs/pull/<n>/head` fetch in `bin/fm-review-diff.sh`.
-Each of those already has a fallback that reasons about content or about the local branch, and on Gerrit the fallback is not a fallback, it is the only path.
+The teardown test and the review diff each already have a fallback that reasons about content or about the local branch, and on Gerrit the fallback is not a fallback, it is the only path.
+The prune has no fallback at all: a `refs/for/<branch>` push creates no upstream tracking ref, so nothing ever reads `[gone]`, the prune never fires, and `fm/<id>` branches accumulate locally after teardown.
 That raises the stakes on the content leg of the landed-work test specifically, since it becomes the sole proof that unlanded work is not about to be discarded.
 This is also a property of Gerrit.
 
@@ -193,7 +194,7 @@ This is also a property of Gerrit.
 Its README states the boundary - "v0.1 is read-only. It never votes, replies, sets reviewers or topics, submits, abandons, or pushes. Every operation is a query." - and its own test suite enforces it by grepping for mutating REST verbs and mutating SSH subcommands.
 Its entire surface is `status`, `show`, `comments`, and `auth status`.
 But the refusal Firstmate itself carries is stated as policy rather than capability.
-Submitting a change means first recording a `Code-Review+2`, and that vote is a positive attributed claim that a named human approved, read as such by colleagues and by any audit of the repository.
+What it protects is the decisive vote rather than the submit: a submit only succeeds once someone has recorded a `Code-Review+2`, and that vote is a positive attributed claim that a named human approved, read as such by colleagues and by any audit of the repository.
 A server that permits self-approval is exactly what makes this a boundary Firstmate chooses rather than one it merely runs into.
 
 So the first two are Gerrit's shape, and the third is the current toolchain plus a deliberate policy.
