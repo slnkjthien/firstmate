@@ -2,7 +2,7 @@
 
 This note is the design reasoning for giving Firstmate a forge axis, worked through Gerrit because Gerrit is the case that forces it.
 It is written for whoever integrates a forge with Firstmate rather than for the operator of any one fleet, so it argues about axes, vocabulary, and ownership, and never about which projects should be registered how.
-Where a question has been settled the decision is stated in the body rather than left standing as a question; the three that remain open are collected at the end.
+Every question it raises is answered, and each decision is stated in the body where the reasoning for it sits rather than collected into a list at the end.
 
 The mechanics it reasons about have their own owners.
 [`bin/fm-pr-lib.sh`](../bin/fm-pr-lib.sh) owns the provider-tagged identity and the merge-poll artifacts, [`bin/fm-pr-merge.sh`](../bin/fm-pr-merge.sh) owns merging, [`bin/fm-project-mode.sh`](../bin/fm-project-mode.sh) owns the registered delivery posture, and [`bin/fm-dod-lib.sh`](../bin/fm-dod-lib.sh) owns what a delivery mode tells a worker.
@@ -37,6 +37,20 @@ An integration that wants to show "what changed since the last review" is asking
 A branch is not the unit of anything.
 A local branch of three commits is three changes related by a parent chain, not one reviewable object.
 This is the point at which the branch-shaped assumption stops being a vocabulary mismatch and starts being an arity mismatch: one worker branch no longer maps to one reviewable thing.
+
+### Forks and the magic ref answer the same question
+
+Gerrit has no forks.
+A project is one shared repository, and there is no separate namespace a proposer owns.
+Next to a branch-shaped forge that reads as a missing feature, and it is better read as the other half of the same design.
+
+Both models exist to answer one question: how does someone propose a change to a branch they cannot write?
+A branch-shaped forge answers it with a fork, a repository the proposer does own, from which a pull request points back at the original.
+Gerrit answers it with `refs/for/<branch>`, which by construction creates a change and cannot create a branch, so permission to propose is a separate grant from permission to write the target.
+
+`refs/for` is therefore not an odd publication target that happens to stand in for a push plus an API call.
+It is the access-control primitive, and change-shaped review is what that primitive produces.
+Reading it as a publication quirk is what makes the rest of Gerrit look like a pile of exceptions rather than one decision followed through.
 
 What does *not* differ is worth stating, because it bounds the problem.
 Reading review state after publication fits Firstmate's existing record with no new shape.
@@ -160,7 +174,15 @@ A per-project annotation is written once per project and can be wrong on exactly
 The cost is a round trip, because asking the tool means running it, so the answer stops being available at scaffold time without a call, which is the property the pre-publication signal needed to begin with.
 Caching the answer recovers that and reintroduces, in smaller form, the staleness the annotation had.
 
-This remains open, and two decisions in section 5 name it as their dependency.
+The answer is to keep a per-project binding and not to ask the tool.
+
+That does not reverse the detected-and-confirmed binding above, and the two compose exactly.
+Detection proposes, the per-project record is the durable answer that confirmation produces, and the forge tool is never asked what it is.
+The earlier decision says where the proposal comes from; this one says where the confirmed answer lives.
+
+It also disposes of the ambient-configuration objection raised just above.
+A detector that reads per-machine login state is only ever proposing something a human confirms once, and what is recorded afterwards is a project fact rather than one machine's opinion.
+The objection bounds how much weight detection can carry alone, which is the weight the confirmation step already removes.
 
 ### Applying "mode is where the worker stops"
 
@@ -194,10 +216,16 @@ This is a property of Gerrit and no amount of tooling changes it.
 **There is no branch on the remote.**
 `refs/for/<branch>` is a magic ref rather than a destination: the push creates or updates a change and leaves behind no ref a later fetch can see.
 Every mechanism that reasons about a remote branch therefore has no counterpart here - the gone-upstream prune in `bin/fm-fleet-sync.sh`, the remote-reachability leg of `bin/fm-teardown.sh`'s landed-work test, and the `refs/pull/<n>/head` fetch in `bin/fm-review-diff.sh`.
+There is no separate namespace either, because there are no forks, so the change is the only remote artifact the work ever has.
 The teardown test and the review diff each already have a fallback that reasons about content or about the local branch, and on Gerrit the fallback is not a fallback, it is the only path.
 The prune has no fallback at all: a `refs/for/<branch>` push creates no upstream tracking ref, so nothing ever reads `[gone]`, the prune never fires, and `fm/<id>` branches accumulate locally after teardown.
 That raises the stakes on the content leg of the landed-work test specifically, since it becomes the sole proof that unlanded work is not about to be discarded.
 This is also a property of Gerrit.
+
+The absence of forks also changes who needs what access.
+With forks, proposing needs no write access to the target repository at all, because the proposer writes only their own copy.
+On Gerrit, proposing requires push access to `refs/for/*` on the one shared repository, so an autonomous worker's identity cannot be confined to a namespace of its own; it holds a grant on the repository everyone else shares.
+That is the provisioning consequence, and it is why the vote boundary in section 5 matters more here rather than less: when an identity can already reach the shared repository, the limits it does not hold are the only limits there are.
 
 **No tool available today can submit.**
 `gerrit-axi` is read-only by construction.
@@ -220,8 +248,8 @@ The forge property Firstmate carries for GitLab is no property at all, only a ta
 
 The question this raises for Gerrit is whether the stack-versus-squash glue belongs on the same side of that line.
 **It does: the shape mechanics live in the forge tool.**
-That decision carries an open dependency, named in section 3, because a tool that declares its own semantics and a tool that merely executes them are different amounts of tool.
-It was also taken before a third candidate home was on the board, and that candidate is argued below.
+Section 3 settles what that tool is asked to be: it executes the mechanics and is never asked to declare its own semantics, because the project record already carries the binding.
+A third candidate home came onto the board after this choice was made, and it is argued below rather than left implicit.
 
 The case for it is that this is forge mechanics through and through.
 Producing a stack of changes under a topic means giving each commit a `Change-Id`, pushing once to `refs/for/<branch>` with a topic option, and reasoning about the parent chain that makes the stack a stack.
@@ -248,7 +276,7 @@ Add Gerrit to that provider set and the skip disappears, the pipeline publishes 
 ### What powers the tool needs
 
 `gerrit-axi` is read-only by construction today, so the shape mechanics cannot move into it as it stands.
-**It gains publish and submit powers**, under the same open dependency.
+**It gains publish and submit powers, and no voting powers at all.**
 
 Getting the risk boundary right matters more than the decision, because the intuitive cut is the wrong one.
 The natural reading, and the one recommended earlier in this design, puts the boundary between publish and submit: publishing is reversible, submitting is not, so grant publish and withhold submit.
@@ -267,7 +295,11 @@ That raises the stakes on relaxing `gerrit-axi` rather than lowering them: grant
 
 So the trade is not publish against submit.
 It is publish and submit on one side, where the server itself is the enforcement, against decisive voting on the other, where nothing is.
-A non-decisive `Code-Review+1` sits between them and deserves to be considered on its own terms, since it records an opinion without satisfying the gate.
+A non-decisive `Code-Review+1` sits between them, since it records an opinion without satisfying the gate.
+
+The line is drawn at the whole of voting rather than at the decisive half.
+A `+1` satisfies no gate, so withholding it costs nothing the mechanics need, and the tool that cannot vote at all needs no one to reason about which votes are safe before each release.
+That matters more on a forkless forge, for the reason section 4 gives: the worker's identity already holds a grant on the shared repository, so its inability to vote is not one guard among several but the specific thing standing between an agent and a manufactured approval.
 
 ### A third place the mechanics could live
 
@@ -287,7 +319,12 @@ It shrinks the forge tool Firstmate needs rather than replacing it.
 The case against is a dependency the other two options do not carry.
 Gerrit support upstream lands when that project decides it lands, at whatever scope its maintainers accept, and a forge needed now cannot be scheduled against someone else's roadmap.
 A tool under our own hand ships when we ship it.
-The honest reading is that the upstream route removes the publication half of the duplication, not all of it, and pays for that with a schedule we do not control, so it is worth taking only if the timing is acceptable and sharing publication is worth that wait.
+The honest reading is that the upstream route removes the publication half of the duplication, not all of it, and pays for that with a schedule we do not control.
+
+**So: build ours now, contribute upstream later.**
+The two are sequential rather than exclusive, which is what makes the timing objection survivable.
+A forge tool built now ships against a schedule we hold, and its publication mechanics are the part that could later be contributed upstream once they are known to work, at which point Firstmate's own tool narrows to merging, the merge poll and the stack watch.
+Choosing the upstream route first would have meant waiting; choosing it second costs only that the publication code is written before it is shared.
 
 ### Watching a stack
 
@@ -301,9 +338,6 @@ That keeps the watch's subject fixed, which is what makes a merged verdict mean 
 
 ## Open questions
 
-Three remain.
-Both section 5 decisions name the first as their dependency.
-
-1. Would a `forge-type` subcommand on the forge tool remove the need for a project-level forge binding, and is one host-pattern mapping held in Firstmate materially better than one annotation per project? (Section 3.)
-2. Should the forge tool be able to vote at all, and if so, only non-decisively? A decisive `Code-Review+2` is where the attributed-approval hazard actually sits, not at submit. (Section 5.)
-3. Should Gerrit publication be contributed upstream to no-mistakes, narrowing the forge tool to merging, the merge poll and the stack watch? That option was not in view when the decision was made. It removes only the duplicated publication mechanics, since submittability and topic-stack reasoning stay on both sides, and it ties a forge needed now to an upstream roadmap. (Section 5.)
+None.
+Every question this note raised is answered where its reasoning sits, rather than repeated as a list here.
+What is left is implementation.
