@@ -193,12 +193,13 @@ This is also a property of Gerrit.
 `gerrit-axi` is read-only by construction.
 Its README states the boundary - "v0.1 is read-only. It never votes, replies, sets reviewers or topics, submits, abandons, or pushes. Every operation is a query." - and its own test suite enforces it by grepping for mutating REST verbs and mutating SSH subcommands.
 Its entire surface is `status`, `show`, `comments`, and `auth status`.
-But the refusal Firstmate itself carries is stated as policy rather than capability.
-What it protects is the decisive vote rather than the submit: a submit only succeeds once someone has recorded a `Code-Review+2`, and that vote is a positive attributed claim that a named human approved, read as such by colleagues and by any audit of the repository.
+But the refusal Firstmate is designed to carry is stated as policy rather than capability, and like the registry forge field it is in review rather than current behavior.
+Today a Gerrit change URL is rejected only because `bin/fm-pr-lib.sh` cannot parse it into a provider identity, which is a capability limit and not a policy.
+What the designed refusal protects is the decisive vote rather than the submit: a submit only succeeds once someone has recorded a `Code-Review+2`, and that vote is a positive attributed claim that a named human approved, read as such by colleagues and by any audit of the repository.
 A server that permits self-approval is exactly what makes this a boundary Firstmate chooses rather than one it merely runs into.
 
-So the first two are Gerrit's shape, and the third is the current toolchain plus a deliberate policy.
-Only the toolchain half could be removed by writing code, and whether it should be is section 5.
+So the first two are Gerrit's shape, and the third is the current toolchain plus a deliberate policy that is designed but not yet landed.
+Only the toolchain half could be removed by writing code, and until the policy lands the toolchain half is the only half that exists; whether it should be removed is section 5.
 
 ## 5. Where responsibility sits: Firstmate or the forge tool
 
@@ -244,6 +245,9 @@ The hazard concentrates one step earlier, in **decisive voting**.
 A tool that can record `Code-Review+2` lets an agent manufacture the approval and then submit legitimately against it, and at that point every gate really is satisfied and nothing anywhere records that no human ever approved.
 That is exactly the attributed-claim problem section 4 identifies, a positive claim that a named human approved, read as such by colleagues and by any audit of the repository.
 It is also why the server permitting self-approval makes this a policy boundary rather than a capability limit: the server will not stop it, so something else has to.
+In the designed end state two independent facts hold that line: Firstmate refuses, and the tool is incapable.
+Today only the second is real, because Firstmate's policy refusal is unlanded.
+That raises the stakes on relaxing `gerrit-axi` rather than lowering them: granting it powers now would remove the only guard that currently exists, not the second of two.
 
 So the trade is not publish against submit.
 It is publish and submit on one side, where the server itself is the enforcement, against decisive voting on the other, where nothing is.
