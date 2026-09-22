@@ -2,7 +2,7 @@
 
 This note is the design reasoning for giving Firstmate a forge axis, worked through Gerrit because Gerrit is the case that forces it.
 It is written for whoever integrates a forge with Firstmate rather than for the operator of any one fleet, so it argues about axes, vocabulary, and ownership, and never about which projects should be registered how.
-Where a question has been settled the decision is stated in the body rather than left standing as a question; the two that remain open are collected at the end.
+Where a question has been settled the decision is stated in the body rather than left standing as a question; the three that remain open are collected at the end.
 
 The mechanics it reasons about have their own owners.
 [`bin/fm-pr-lib.sh`](../bin/fm-pr-lib.sh) owns the provider-tagged identity and the merge-poll artifacts, [`bin/fm-pr-merge.sh`](../bin/fm-pr-merge.sh) owns merging, [`bin/fm-project-mode.sh`](../bin/fm-project-mode.sh) owns the registered delivery posture, and [`bin/fm-dod-lib.sh`](../bin/fm-dod-lib.sh) owns what a delivery mode tells a worker.
@@ -132,6 +132,16 @@ Confirmation is what stops a wrong guess from becoming a silent second source of
 Proposing it at intake also puts the signal where a pre-publication signal has to be, in the brief at scaffold time with no clone read and no network call, while keeping a human at the one point where the evidence can be misread.
 The in-review delivery-mode design already takes that shape, treating a protocol fact such as an SSH remote on port 29418 or a `refs/for/<branch>` push target as good evidence to propose the binding while refusing to infer it later.
 
+The tool with the broadest forge coverage in this stack corroborates detection, though more narrowly than it first appears to.
+no-mistakes binds its provider by calling `DetectProvider(remoteURL)` across the six forges its `Provider` type names - GitHub, GitLab, Bitbucket, Azure DevOps, Forgejo and Gitea - and no project declares its forge anywhere in that scheme.
+Only well-known hosts are recognised from the URL alone.
+For a host it does not recognise, which is how Gerrit is nearly always deployed, it falls back to machine-local configuration keyed by host: SSH config, then whether the local `glab`, `gh` or `tea` CLI is logged in to that host, then a `FORGEJO_BASE_URL` environment variable, while its per-repository execution context resolves machine-local forge profiles.
+What survives as corroboration is exactly one fact: no per-project declaration anywhere in the scheme, across six forges.
+
+The same evidence also bears against detection.
+Because it reads per-machine login state, one remote can resolve to different forges on two machines, or to none on a machine where the CLI is not logged in, and that is a genuine argument for declaring the forge rather than detecting it.
+It does not overturn the decision, since confirmation at intake is where a misread is meant to be caught, but anyone relying on detection should know it is not purely structural.
+
 #### Could the tool declare its own semantics instead?
 
 That settles where the binding comes from without settling whether a project-level binding is needed at all.
@@ -149,11 +159,6 @@ A host pattern is written once and is then either wrong for every project on tha
 A per-project annotation is written once per project and can be wrong on exactly one of them, which is the failure mode that does not announce itself at all.
 The cost is a round trip, because asking the tool means running it, so the answer stops being available at scaffold time without a call, which is the property the pre-publication signal needed to begin with.
 Caching the answer recovers that and reintroduces, in smaller form, the staleness the annotation had.
-
-There is independent corroboration for the detected shape in the tool with the broadest forge coverage in this stack.
-no-mistakes binds its provider by calling `DetectProvider(remoteURL)` and recognising the host, across all six forges its `Provider` type names - GitHub, GitLab, Bitbucket, Azure DevOps, Forgejo and Gitea - with no per-project declaration anywhere in the scheme.
-Its static detector is documented as recognising providers purely from URL and host text, with no ambient CLI configuration consulted.
-That is the thin host-pattern mapping weighed above, already built and already carrying six forges, which argues for the shape more strongly than Gerrit alone can.
 
 This remains open, and two decisions in section 5 name it as their dependency.
 
@@ -270,15 +275,19 @@ Two homes for the shape mechanics have been weighed so far, Firstmate and a forg
 There is a third, and it deserves arguing as a peer rather than a footnote, because it was not in view when the choice above was made.
 no-mistakes already carries a multi-forge abstraction, with a `Provider` type, per-provider packages, and a per-repository execution context, and Gerrit support could be contributed there natively following the pattern its six existing providers follow.
 
-The case for it is that it removes a duplication the other two options create.
-If the pipeline gains Gerrit support while Firstmate also has its own forge tool, the mechanics exist twice over: `Change-Id` handling, magic-ref pushes, topic stacks and submittability, implemented independently on each side.
-That is the same duplication moving the mechanics into a forge tool was meant to prevent, arriving by another route.
-Contributing upstream instead leaves Firstmate calling one tool that already knows six forges, rather than standing a seventh integration up beside it, and that abstraction is both more mature than a new one and shared rather than ours alone.
+The case for it is that it removes part of a duplication the other two options create.
+If the pipeline gains Gerrit support while Firstmate also has its own forge tool, `Change-Id` handling, magic-ref pushes, topic stacks and submittability are each implemented independently on both sides.
+Contributing upstream takes the publication mechanics off Firstmate's side: `Change-Id` handling on push and magic-ref publication would live in a pipeline that already knows six forges, rather than in a seventh integration beside it, and that abstraction is both more mature than a new one and shared rather than ours alone.
+
+It removes only that part.
+The pipeline never merges: its host interface finds, creates and updates pull requests and reads their state, checks and mergeability, and its `ci` step only verifies that a merge happened.
+Merging, the merge poll and the stack watch below stay with Firstmate wherever publication lives, so Firstmate still needs a Gerrit-aware tool, and submittability and topic-stack reasoning still exist on both sides under this option.
+It shrinks the forge tool Firstmate needs rather than replacing it.
 
 The case against is a dependency the other two options do not carry.
 Gerrit support upstream lands when that project decides it lands, at whatever scope its maintainers accept, and a forge needed now cannot be scheduled against someone else's roadmap.
 A tool under our own hand ships when we ship it.
-The honest reading is that the upstream route is the better one if the timing is acceptable and the worse one if it is not, which makes this a question about urgency rather than about architecture.
+The honest reading is that the upstream route removes the publication half of the duplication, not all of it, and pays for that with a schedule we do not control, so it is worth taking only if the timing is acceptable and sharing publication is worth that wait.
 
 ### Watching a stack
 
@@ -297,4 +306,4 @@ Both section 5 decisions name the first as their dependency.
 
 1. Would a `forge-type` subcommand on the forge tool remove the need for a project-level forge binding, and is one host-pattern mapping held in Firstmate materially better than one annotation per project? (Section 3.)
 2. Should the forge tool be able to vote at all, and if so, only non-decisively? A decisive `Code-Review+2` is where the attributed-approval hazard actually sits, not at submit. (Section 5.)
-3. Does contributing Gerrit support upstream to no-mistakes displace the decision to put the shape mechanics in a forge tool? That option was not in view when the decision was made, and it is the only one of the three that avoids implementing the mechanics twice. (Section 5.)
+3. Should Gerrit publication be contributed upstream to no-mistakes, narrowing the forge tool to merging, the merge poll and the stack watch? That option was not in view when the decision was made. It removes only the duplicated publication mechanics, since submittability and topic-stack reasoning stay on both sides, and it ties a forge needed now to an upstream roadmap. (Section 5.)
