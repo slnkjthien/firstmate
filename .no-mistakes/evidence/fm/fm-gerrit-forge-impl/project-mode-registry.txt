@@ -1,0 +1,47 @@
+## Default output: base (9296f9b9) vs HEAD (d19c413), non-forge entries
+plain    (none) IDENTICAL  head=[no-mistakes off rc=0]
+plain    --raw  IDENTICAL  head=[no-mistakes off rc=0]
+dpr      (none) IDENTICAL  head=[direct-PR off rc=0]
+dpr      --raw  IDENTICAL  head=[direct-PR off rc=0]
+yolo     (none) IDENTICAL  head=[no-mistakes on rc=0]
+yolo     --raw  IDENTICAL  head=[no-mistakes on rc=0]
+lo       (none) IDENTICAL  head=[local-only off rc=0]
+lo       --raw  IDENTICAL  head=[local-only off rc=0]
+prod     (none) IDENTICAL  head=[no-mistakes off rc=0]
+prod     --raw  IDENTICAL  head=[no-mistakes-prod-only off rc=0]
+extra    (none) IDENTICAL  head=[direct-PR off rc=0]
+extra    --raw  IDENTICAL  head=[direct-PR off rc=0]
+weird    (none) IDENTICAL  head=[warn: unknown mode "bogusmode" for weird; defaulting to no-mistakes off no-mistakes off rc=0]
+weird    --raw  IDENTICAL  head=[warn: unknown mode "bogusmode" for weird; defaulting to no-mistakes off no-mistakes off rc=0]
+missing  (none) IDENTICAL  head=[warn: project "missing" not in registry; defaulting to no-mistakes off no-mistakes off rc=0]
+missing  --raw  IDENTICAL  head=[warn: project "missing" not in registry; defaulting to no-mistakes off no-mistakes off rc=0]
+
+## Forge-bound and malformed entries at HEAD
+SlnkFindMy (none)   -> no-mistakes off rc=0
+SlnkFindMy --forge  -> gerrit rc=0
+gy         (none)   -> refused: +yolo is registered for gy but yolo is inactive for forge=gerrit, so this reports yolo=off: a Gerrit Code-Review+2 is a positive attributed claim that a named human approved, and firstmate must not manufacture one (captain's decision 2026-09-15) no-mistakes off rc=0
+gy         --forge  -> gerrit rc=0
+typo       (none)   -> refused: malformed forge binding "forg=gerrit" registered for typo in /tmp/tmp.cB4VaGAOEv/data/projects.md; forge= is the only keyed annotation token, and its one value is forge=gerrit; correct the registry entry rc=3
+typo       --forge  -> refused: malformed forge binding "forg=gerrit" registered for typo in /tmp/tmp.cB4VaGAOEv/data/projects.md; forge= is the only keyed annotation token, and its one value is forge=gerrit; correct the registry entry rc=3
+badval     (none)   -> refused: unknown forge "gitlab" registered for badval in /tmp/tmp.cB4VaGAOEv/data/projects.md; the accepted value is forge=gerrit, or no forge token at all for a forge whose pull requests no-mistakes already drives; correct the registry entry rc=3
+badval     --forge  -> refused: unknown forge "gitlab" registered for badval in /tmp/tmp.cB4VaGAOEv/data/projects.md; the accepted value is forge=gerrit, or no forge token at all for a forge whose pull requests no-mistakes already drives; correct the registry entry rc=3
+lofg       (none)   -> refused: lofg is registered local-only with forge=gerrit in /tmp/tmp.cB4VaGAOEv/data/projects.md; local-only publishes nothing, so a forge has no meaning there, and its landing would fast-forward local main with content the review server has never seen; register no-mistakes or direct-PR to publish through the forge, or drop the forge token to keep the project local rc=3
+lofg       --forge  -> refused: lofg is registered local-only with forge=gerrit in /tmp/tmp.cB4VaGAOEv/data/projects.md; local-only publishes nothing, so a forge has no meaning there, and its landing would fast-forward local main with content the review server has never seen; register no-mistakes or direct-PR to publish through the forge, or drop the forge token to keep the project local rc=3
+emptyfg    (none)   -> direct-PR off rc=0
+emptyfg    --forge  -> none rc=0
+plain      (none)   -> no-mistakes off rc=0
+plain      --forge  -> none rc=0
+missing    (none)   -> warn: project "missing" not in registry; defaulting to no-mistakes off no-mistakes off rc=0
+missing    --forge  -> warn: project "missing" not in registry; defaulting to no-mistakes off none rc=0
+baregerrit base: no-mistakes off
+rc=0
+baregerrit head: no-mistakes off
+rc=0
+baregerrit head --forge: none
+rc=0
+otherkey base: direct-PR off
+rc=0
+otherkey head: refused: malformed forge binding "owner=me" registered for otherkey in /tmp/tmp.cB4VaGAOEv/data/projects.md; forge= is the only keyed annotation token, and its one value is forge=gerrit; correct the registry entry
+rc=3
+otherkey head --forge: refused: malformed forge binding "owner=me" registered for otherkey in /tmp/tmp.cB4VaGAOEv/data/projects.md; forge= is the only keyed annotation token, and its one value is forge=gerrit; correct the registry entry
+rc=3

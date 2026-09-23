@@ -1,0 +1,34 @@
+legacy    .      base=[no-mistakes off rc=0] new=[no-mistakes off rc=0] SAME
+legacy    --raw  base=[no-mistakes off rc=0] new=[no-mistakes off rc=0] SAME
+nm        .      base=[no-mistakes off rc=0] new=[no-mistakes off rc=0] SAME
+nm        --raw  base=[no-mistakes off rc=0] new=[no-mistakes off rc=0] SAME
+dpr       .      base=[direct-PR off rc=0] new=[direct-PR off rc=0] SAME
+dpr       --raw  base=[direct-PR off rc=0] new=[direct-PR off rc=0] SAME
+lo        .      base=[local-only off rc=0] new=[local-only off rc=0] SAME
+lo        --raw  base=[local-only off rc=0] new=[local-only off rc=0] SAME
+yolo      .      base=[no-mistakes on rc=0] new=[no-mistakes on rc=0] SAME
+yolo      --raw  base=[no-mistakes on rc=0] new=[no-mistakes on rc=0] SAME
+prod      .      base=[no-mistakes off rc=0] new=[no-mistakes off rc=0] SAME
+prod      --raw  base=[no-mistakes-prod-only off rc=0] new=[no-mistakes-prod-only off rc=0] SAME
+owner     .      base=[direct-PR off rc=0] new=[direct-PR off rc=0] SAME
+owner     --raw  base=[direct-PR off rc=0] new=[direct-PR off rc=0] SAME
+firstkey  .      base=[no-mistakes off rc=0] new=[no-mistakes off rc=0] SAME
+firstkey  --raw  base=[no-mistakes off rc=0] new=[no-mistakes off rc=0] SAME
+bogus     .      base=[no-mistakes off rc=0] new=[no-mistakes off rc=0] SAME
+bogus     --raw  base=[no-mistakes off rc=0] new=[no-mistakes off rc=0] SAME
+near      .      base=[direct-PR off rc=0] new=[direct-PR off rc=0] DIFF
+   base-stderr: 
+   new-stderr:  warn: ignoring "forg=gerrit" registered for near in /tmp/tmp.gYz1ASJljM/data/projects.md; it is not a forge binding, and the forge binding is spelled forge=gerrit
+near      --raw  base=[direct-PR off rc=0] new=[direct-PR off rc=0] DIFF
+   base-stderr: 
+   new-stderr:  warn: ignoring "forg=gerrit" registered for near in /tmp/tmp.gYz1ASJljM/data/projects.md; it is not a forge binding, and the forge binding is spelled forge=gerrit
+nearcap   .      base=[local-only off rc=0] new=[local-only off rc=0] DIFF
+   base-stderr: 
+   new-stderr:  warn: ignoring "Forge=gerrit" registered for nearcap in /tmp/tmp.gYz1ASJljM/data/projects.md; it is not a forge binding, and the forge binding is spelled forge=gerrit
+nearcap   --raw  base=[local-only off rc=0] new=[local-only off rc=0] DIFF
+   base-stderr: 
+   new-stderr:  warn: ignoring "Forge=gerrit" registered for nearcap in /tmp/tmp.gYz1ASJljM/data/projects.md; it is not a forge binding, and the forge binding is spelled forge=gerrit
+extra     .      base=[local-only on rc=0] new=[local-only on rc=0] SAME
+extra     --raw  base=[local-only on rc=0] new=[local-only on rc=0] SAME
+missing   .      base=[no-mistakes off rc=0] new=[no-mistakes off rc=0] SAME
+missing   --raw  base=[no-mistakes off rc=0] new=[no-mistakes off rc=0] SAME

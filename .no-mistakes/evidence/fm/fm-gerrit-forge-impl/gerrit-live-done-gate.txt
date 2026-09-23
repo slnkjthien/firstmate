@@ -1,0 +1,12 @@
+# 1. HEAD is the published patch set (live gerrit-axi read of change 186655)
+$ fm_dod_accept_ship_done ship direct-PR <SlnkFindMy copy @ a90caf6> SlnkFindMy "done: PR https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655 published for review"
+  rc=0 reason=[]
+# 2. HEAD tree differs from the published patch set (an extra local commit)
+$ fm_dod_accept_ship_done ship direct-PR <SlnkFindMy copy @ 36c6bb0> SlnkFindMy "done: PR https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655 published for review"
+  rc=1 reason=[named head 36c6bb02f687b85b6f580da78c47ec5f19364faa is not the published content of https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655: the change's current patch set does not carry this copy's HEAD tree, or it could not be read]
+# 3. published-for-review report with a non-canonical Gerrit URL (patch-set suffix)
+$ fm_dod_accept_ship_done ship direct-PR <SlnkFindMy copy @ 36c6bb0> SlnkFindMy "done: PR https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655/1 published for review"
+  rc=1 reason=[the published-for-review report does not name a Gerrit change in the canonical https://<host>/c/<project>/+/<number> form]
+# 4. published-for-review report with a path-prefixed URL
+$ fm_dod_accept_ship_done ship direct-PR <SlnkFindMy copy @ 36c6bb0> SlnkFindMy "done: PR https://gerrit.spectralink.com/r/c/spectralink/apps/SlnkFindMy/+/186655 published for review"
+  rc=1 reason=[the published-for-review report does not name a Gerrit change in the canonical https://<host>/c/<project>/+/<number> form]

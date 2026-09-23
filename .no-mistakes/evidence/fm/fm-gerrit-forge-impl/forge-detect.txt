@@ -1,0 +1,14 @@
+$ fm-forge-detect.sh ~/Code/SlnkFindMy
+  (remote) origin	ssh://jthien@gerrit.spectralink.com:29418/spectralink/apps/SlnkFindMy (fetch)
+  (remote) origin	ssh://jthien@gerrit.spectralink.com:29418/spectralink/apps/SlnkFindMy (push)
+forge=gerrit evidence=origin remote ssh://jthien@gerrit.spectralink.com:29418/spectralink/apps/SlnkFindMy uses SSH port 29418
+  exit=0
+$ fm-forge-detect.sh <github clone>
+forge=none
+  exit=0
+$ fm-forge-detect.sh <https clone with refs/for push>
+forge=gerrit evidence=origin push refspec HEAD:refs/for/main targets refs/for/
+  exit=0
+$ fm-forge-detect.sh /nonexistent
+error: /nonexistent is not a git work tree
+  exit=2

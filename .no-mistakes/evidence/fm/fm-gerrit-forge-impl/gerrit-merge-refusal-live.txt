@@ -1,0 +1,4 @@
+$ fm-pr-merge.sh live-ok https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655   (firstmate must never submit a Gerrit change)
+  error: firstmate does not submit a Gerrit change: submitting requires an attributed human approval it must not manufacture, so a human submits the change on the server
+  exit=2
+  no merge-authority recorded

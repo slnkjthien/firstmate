@@ -1,0 +1,20 @@
+== merged-task https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655
+-- sidecar merged-task.pr-poll:
+gerrit
+https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655
+gerrit.spectralink.com
+spectralink/apps/SlnkFindMy
+186655
+
+-- check.sh vs bin/fm-pr-poll.sh: byte-identical
+-- live poll output: [merged] rc=0
+== open-task https://gerrit.spectralink.com/c/spectralink/apps/SlnkOTA/+/186649
+-- sidecar open-task.pr-poll:
+gerrit
+https://gerrit.spectralink.com/c/spectralink/apps/SlnkOTA/+/186649
+gerrit.spectralink.com
+spectralink/apps/SlnkOTA
+186649
+
+-- check.sh vs bin/fm-pr-poll.sh: byte-identical
+-- live poll output: [] rc=0

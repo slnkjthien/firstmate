@@ -1,0 +1,8 @@
+$ fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655 gerrit.spectralink.com spectralink/apps/SlnkFindMy 186655   (real MERGED change)
+  stdout=[merged] exit=0
+$ fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkOTA/+/186649 gerrit.spectralink.com spectralink/apps/SlnkOTA 186649   (real open NEW change)
+  stdout=[] exit=0
+$ fm-pr-poll.sh --validated gerrit https://evil.example/c/spectralink/apps/SlnkFindMy/+/186655 gerrit.spectralink.com spectralink/apps/SlnkFindMy 186655   (doctored URL != components)
+  stdout=[] exit=0
+$ fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/999999999 gerrit.spectralink.com spectralink/apps/SlnkFindMy 999999999   (nonexistent change)
+  stdout=[] exit=0

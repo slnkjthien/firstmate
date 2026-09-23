@@ -1,0 +1,12 @@
+## after arming recorded pr=, a done naming that URL, with gerrit-axi replaced by a failing logger (server unreachable / revision moved):
+  rc=0
+  gerrit-axi calls made: 0
+## a done naming a different, unrecorded real change (live read against gerrit.spectralink.com, tree differs):
+named head a90caf67699207789612a93aa72c1896641bcdb6 is not the published content of https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/183612: the change's current patch set does not carry this copy's HEAD tree, or it could not be read
+  rc=1
+## a published-for-review done whose URL carries a patch-set suffix (non-canonical):
+the published-for-review report does not name a Gerrit change in the canonical https://<host>/c/<project>/+/<number> form
+  rc=1
+## a published-for-review done behind a path prefix (non-canonical):
+the published-for-review report does not name a Gerrit change in the canonical https://<host>/c/<project>/+/<number> form
+  rc=1

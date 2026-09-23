@@ -1,0 +1,35 @@
+$ fm-pr-check.sh live-bad https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655    (worker HEAD tree != change's current patch set)
+  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ●  WATCHER DOWN - SUPERVISION IS OFF
+  ●  2 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+  ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+  ●  This is a supervision warning only; the guarded operation WILL still run.
+  ●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  error: named head aa4482cf31bb66bb568f1b6427a7bdc626740857 is not the published content of https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655: the change's current patch set does not carry this copy's HEAD tree, or it could not be read
+  exit=1
+  meta pr= lines: 0  check armed: none
+$ fm-pr-check.sh live-ok https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655    (worker HEAD tree == change's current patch set)
+  WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+  armed: state/live-ok.check.sh
+  exit=0
+  meta after arming:
+    window=fm-live-ok
+    endpoint_task_id=live-ok
+    worktree=/tmp/tmp.gYz1ASJljM/wt
+    project=/tmp/tmp.gYz1ASJljM/wt
+    kind=ship
+    mode=direct-PR
+    pr=https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655
+  sidecar:
+    gerrit
+    https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655
+    gerrit.spectralink.com
+    spectralink/apps/SlnkFindMy
+    186655
+  armed check is byte-identical to bin/fm-pr-poll.sh: yes
+$ (run the armed check as the watcher does)
+timeout: failed to run command ‘/tmp/tmp.gYz1ASJljM/armhome/state/live-ok.check.sh’: Permission denied
+  stdout=[]
+$ bash state/live-ok.check.sh   (watcher invocation, cwd=/)
+  stdout=[merged]

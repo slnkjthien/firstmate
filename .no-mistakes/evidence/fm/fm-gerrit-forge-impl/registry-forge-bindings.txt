@@ -1,0 +1,43 @@
+$ fm-project-mode.sh  dpr
+  stdout=[direct-PR off] exit=0
+$ fm-project-mode.sh --forge dpr
+  stdout=[none] exit=0
+$ fm-project-mode.sh  owner
+  stdout=[direct-PR off] exit=0
+$ fm-project-mode.sh --forge owner
+  stdout=[none] exit=0
+$ fm-project-mode.sh  g-nm
+  stdout=[no-mistakes off] exit=0
+$ fm-project-mode.sh --forge g-nm
+  stdout=[gerrit] exit=0
+$ fm-project-mode.sh  g-dpr
+  stdout=[direct-PR off] exit=0
+$ fm-project-mode.sh --forge g-dpr
+  stdout=[gerrit] exit=0
+$ fm-project-mode.sh  g-yolo
+  stdout=[no-mistakes off] exit=0
+  stderr: refused: +yolo is registered for g-yolo but yolo is inactive for forge=gerrit, so this reports yolo=off: a Gerrit Code-Review+2 is a positive attributed claim that a named human approved, and firstmate must not manufacture one (captain's decision 2026-09-15)
+$ fm-project-mode.sh --forge g-yolo
+  stdout=[gerrit] exit=0
+$ fm-project-mode.sh  g-lo
+  stdout=[] exit=3
+  stderr: refused: g-lo is registered local-only with forge=gerrit in /tmp/tmp.gYz1ASJljM/data/projects.md; local-only publishes nothing, so a forge has no meaning there, and its landing would fast-forward local main with content the review server has never seen; register no-mistakes or direct-PR to publish through the forge, or drop the forge token to keep the project local
+$ fm-project-mode.sh --forge g-lo
+  stdout=[] exit=3
+  stderr: refused: g-lo is registered local-only with forge=gerrit in /tmp/tmp.gYz1ASJljM/data/projects.md; local-only publishes nothing, so a forge has no meaning there, and its landing would fast-forward local main with content the review server has never seen; register no-mistakes or direct-PR to publish through the forge, or drop the forge token to keep the project local
+$ fm-project-mode.sh  g-empty
+  stdout=[] exit=3
+  stderr: refused: empty forge binding "forge=" registered for g-empty in /tmp/tmp.gYz1ASJljM/data/projects.md; the accepted value is forge=gerrit, or no forge token at all for a forge whose pull requests no-mistakes already drives; correct the registry entry
+$ fm-project-mode.sh --forge g-empty
+  stdout=[] exit=3
+  stderr: refused: empty forge binding "forge=" registered for g-empty in /tmp/tmp.gYz1ASJljM/data/projects.md; the accepted value is forge=gerrit, or no forge token at all for a forge whose pull requests no-mistakes already drives; correct the registry entry
+$ fm-project-mode.sh  g-unknown
+  stdout=[] exit=3
+  stderr: refused: unknown forge "githb" registered for g-unknown in /tmp/tmp.gYz1ASJljM/data/projects.md; the accepted value is forge=gerrit, or no forge token at all for a forge whose pull requests no-mistakes already drives; correct the registry entry
+$ fm-project-mode.sh --forge g-unknown
+  stdout=[] exit=3
+  stderr: refused: unknown forge "githb" registered for g-unknown in /tmp/tmp.gYz1ASJljM/data/projects.md; the accepted value is forge=gerrit, or no forge token at all for a forge whose pull requests no-mistakes already drives; correct the registry entry
+$ fm-project-mode.sh  g-first
+  stdout=[no-mistakes off] exit=0
+$ fm-project-mode.sh --forge g-first
+  stdout=[gerrit] exit=0

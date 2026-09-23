@@ -1,0 +1,10 @@
+== https://gerrit.spectralink.com/c/spectralink/apps/SlnkOTA/+/186649
+parsed provider=gerrit host=gerrit.spectralink.com number=186649
+state=NEW merged=false
+revision=1580cd08c2d42c4cde1ae003958983522d41f6d0
+== https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655
+parsed provider=gerrit host=gerrit.spectralink.com number=186655
+state=MERGED merged=true
+revision=a90caf67699207789612a93aa72c1896641bcdb6
+== https://gerrit.spectralink.com/c/spectralink/apps/SlnkOTA/+/186649/1
+refused by fm_pr_url_parse (rc=1)

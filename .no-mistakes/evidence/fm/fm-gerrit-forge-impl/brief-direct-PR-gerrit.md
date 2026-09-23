@@ -13,20 +13,20 @@ If the task will start, stop, delete, restart, profile, or otherwise drive Herdr
 Do not add Herdr lifecycle commands to this unguarded brief by hand.
 
 # Setup
-You are in a disposable git worktree of SlnkFindMy, at a detached HEAD on a clean default branch.
+You are in a disposable git worktree of g-dpr, at a detached HEAD on a clean default branch.
 
 **Verify isolation before anything else.** Run `pwd -P` and `git rev-parse --show-toplevel`; both must resolve to the disposable task worktree you were launched in, such as a treehouse pool path or an Orca-managed worktree, not the primary checkout firstmate operates from.
 The path check is authoritative: `git rev-parse --git-dir` and `git rev-parse --git-common-dir` can help inspect the repo, but they do not prove you are outside the primary checkout.
 If the top-level path is the primary checkout or not the worktree you were launched in, STOP - do not branch or commit here - append `blocked [at=<epoch>]: launched in primary checkout, not an isolated worktree` to the status file and stop.
 
-1. First action: create your branch: `git checkout -b fm/g-direct`
+1. First action: create your branch: `git checkout -b fm/t-dpr-g`
 
 # Rules
 1. Never push with git and never create a change except through the one `gerrit-axi publish --squash` your Definition of done names. Never run `gerrit-axi submit`, never vote or review a change by any path, including `gerrit review` or a label option on a push, and never abandon one: a human reviewer approves and submits it on the server.
 2. Stay inside this worktree; modify nothing outside it.
 3. Use gh-axi for GitHub operations and chrome-devtools-axi for browser operations.
 4. Report status by appending one line:
-   `echo "{state} [at=<epoch>]: {one short line}" >> '/tmp/fm-gerrit-live/home-brief/state/g-direct.status' && { [ ! -e '/tmp/fm-gerrit-live/home-brief/config/fleet-ledger' ] || '/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-fleet-ledger.sh' appended '/tmp/fm-gerrit-live/home-brief/config' '/tmp/fm-gerrit-live/home-brief/state/g-direct.status' >/dev/null 2>&1 || true; }`
+   `echo "{state} [at=<epoch>]: {one short line}" >> '/tmp/tmp.gYz1ASJljM/home/state/t-dpr-g.status' && { [ ! -e '/tmp/tmp.gYz1ASJljM/home/config/fleet-ledger' ] || '/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37P8DK461M15FMM10S5DQGS/bin/fm-fleet-ledger.sh' appended '/tmp/tmp.gYz1ASJljM/home/config' '/tmp/tmp.gYz1ASJljM/home/state/t-dpr-g.status' >/dev/null 2>&1 || true; }`
    States: working, needs-decision, blocked, paused, done, failed.
    Substitute `<epoch>` with the current Unix time in seconds - run `date +%s` and write the number it printed; a stamp that is not plain digits records no time at all.
    Each append wakes firstmate, so report sparingly: only phase changes a supervisor
@@ -62,15 +62,15 @@ If the top-level path is the primary checkout or not the worktree you were launc
    timed-out call was only waiting for a read while the run kept working.
 
 # Firstmate instruction inbox
-Firstmate steers you through durable message files in '/tmp/fm-gerrit-live/home-brief/state/g-direct.inbox'.
-When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/tmp/fm-gerrit-live/home-brief/state/g-direct.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/tmp/fm-gerrit-live/home-brief/state/g-direct.inbox'/NNN.msg '/tmp/fm-gerrit-live/home-brief/state/g-direct.inbox'/handled/`.
+Firstmate steers you through durable message files in '/tmp/tmp.gYz1ASJljM/home/state/t-dpr-g.inbox'.
+When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/tmp/tmp.gYz1ASJljM/home/state/t-dpr-g.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/tmp/tmp.gYz1ASJljM/home/state/t-dpr-g.inbox'/NNN.msg '/tmp/tmp.gYz1ASJljM/home/state/t-dpr-g.inbox'/handled/`.
 The move IS the acknowledgement: without it firstmate rings again and eventually treats you as stuck. An empty or absent inbox needs no action.
 
 # Project memory
-If `AGENTS.md` or `CLAUDE.md` already exists, or if this task produced durable project-intrinsic knowledge, run `/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-ensure-agents-md.sh .` in the worktree.
+If `AGENTS.md` or `CLAUDE.md` already exists, or if this task produced durable project-intrinsic knowledge, run `/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37P8DK461M15FMM10S5DQGS/bin/fm-ensure-agents-md.sh .` in the worktree.
 Record only project knowledge useful to almost every future session.
 For anything the codebase already shows, prefer a pointer to the authoritative file, command, or doc over copying the detail.
-If you touch a project `AGENTS.md`, follow `/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-ensure-agents-md.sh`'s self-governance contract in the same pass.
+If you touch a project `AGENTS.md`, follow `/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37P8DK461M15FMM10S5DQGS/bin/fm-ensure-agents-md.sh`'s self-governance contract in the same pass.
 Keep it proportionate: skip `AGENTS.md` edits for trivial tasks that produced no durable project knowledge.
 
 # Definition of done
@@ -90,5 +90,6 @@ Publish from this copy with `gerrit-axi`, never with `git push`:
    A failure prints a typed error record instead; fix what it names and publish again, which updates the same change rather than creating another.
 Then append `done [at=<epoch>]: PR {change url} published for review` to the status file and stop. You are finished.
 That `done:` is accepted only when the change's current patch set on the server carries this copy's HEAD tree, so commit nothing after publishing; if you must change the work, commit it and publish again before reporting done.
+A `done:` whose URL is not the canonical `https://<host>/c/<project>/+/<number>` change URL is refused.
 There is no pull request, no `gh-axi` call, and no forge CI result to report: a human reviewer approves and submits the change on the server, and firstmate relays that outcome.
 Do NOT run /no-mistakes.
