@@ -19,14 +19,14 @@ You are in a disposable git worktree of SlnkFindMy, at a detached HEAD on a clea
 The path check is authoritative: `git rev-parse --git-dir` and `git rev-parse --git-common-dir` can help inspect the repo, but they do not prove you are outside the primary checkout.
 If the top-level path is the primary checkout or not the worktree you were launched in, STOP - do not branch or commit here - append `blocked [at=<epoch>]: launched in primary checkout, not an isolated worktree` to the status file and stop.
 
-1. First action: create your branch: `git checkout -b fm/t-dpr`
+1. First action: create your branch: `git checkout -b fm/g-direct`
 
 # Rules
 1. Never push with git and never create a change except through the one `gerrit-axi publish --squash` your Definition of done names. Never run `gerrit-axi submit`, never vote or review a change by any path, including `gerrit review` or a label option on a push, and never abandon one: a human reviewer approves and submits it on the server.
 2. Stay inside this worktree; modify nothing outside it.
 3. Use gh-axi for GitHub operations and chrome-devtools-axi for browser operations.
 4. Report status by appending one line:
-   `echo "{state} [at=<epoch>]: {one short line}" >> '/tmp/fm-gerrit-intake.AntcQX/home/state/t-dpr.status' && { [ ! -e '/tmp/fm-gerrit-intake.AntcQX/home/config/fleet-ledger' ] || '/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37ADDWYM1N7ZPT4G9PBT882/bin/fm-fleet-ledger.sh' appended '/tmp/fm-gerrit-intake.AntcQX/home/config' '/tmp/fm-gerrit-intake.AntcQX/home/state/t-dpr.status' >/dev/null 2>&1 || true; }`
+   `echo "{state} [at=<epoch>]: {one short line}" >> '/tmp/fm-gerrit-live/home-brief/state/g-direct.status' && { [ ! -e '/tmp/fm-gerrit-live/home-brief/config/fleet-ledger' ] || '/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-fleet-ledger.sh' appended '/tmp/fm-gerrit-live/home-brief/config' '/tmp/fm-gerrit-live/home-brief/state/g-direct.status' >/dev/null 2>&1 || true; }`
    States: working, needs-decision, blocked, paused, done, failed.
    Substitute `<epoch>` with the current Unix time in seconds - run `date +%s` and write the number it printed; a stamp that is not plain digits records no time at all.
    Each append wakes firstmate, so report sparingly: only phase changes a supervisor
@@ -62,15 +62,15 @@ If the top-level path is the primary checkout or not the worktree you were launc
    timed-out call was only waiting for a read while the run kept working.
 
 # Firstmate instruction inbox
-Firstmate steers you through durable message files in '/tmp/fm-gerrit-intake.AntcQX/home/state/t-dpr.inbox'.
-When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/tmp/fm-gerrit-intake.AntcQX/home/state/t-dpr.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/tmp/fm-gerrit-intake.AntcQX/home/state/t-dpr.inbox'/NNN.msg '/tmp/fm-gerrit-intake.AntcQX/home/state/t-dpr.inbox'/handled/`.
+Firstmate steers you through durable message files in '/tmp/fm-gerrit-live/home-brief/state/g-direct.inbox'.
+When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/tmp/fm-gerrit-live/home-brief/state/g-direct.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/tmp/fm-gerrit-live/home-brief/state/g-direct.inbox'/NNN.msg '/tmp/fm-gerrit-live/home-brief/state/g-direct.inbox'/handled/`.
 The move IS the acknowledgement: without it firstmate rings again and eventually treats you as stuck. An empty or absent inbox needs no action.
 
 # Project memory
-If `AGENTS.md` or `CLAUDE.md` already exists, or if this task produced durable project-intrinsic knowledge, run `/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37ADDWYM1N7ZPT4G9PBT882/bin/fm-ensure-agents-md.sh .` in the worktree.
+If `AGENTS.md` or `CLAUDE.md` already exists, or if this task produced durable project-intrinsic knowledge, run `/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-ensure-agents-md.sh .` in the worktree.
 Record only project knowledge useful to almost every future session.
 For anything the codebase already shows, prefer a pointer to the authoritative file, command, or doc over copying the detail.
-If you touch a project `AGENTS.md`, follow `/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37ADDWYM1N7ZPT4G9PBT882/bin/fm-ensure-agents-md.sh`'s self-governance contract in the same pass.
+If you touch a project `AGENTS.md`, follow `/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-ensure-agents-md.sh`'s self-governance contract in the same pass.
 Keep it proportionate: skip `AGENTS.md` edits for trivial tasks that produced no durable project knowledge.
 
 # Definition of done

@@ -1,0 +1,35 @@
+=== S10 brief scaffolding for forge=gerrit
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-brief.sh g-stack SlnkFindMy --mode direct-PR --forge gerrit --shape stack
+error: --shape stack is refused: a stack is several changes, and it must be watched by its membership pinned when its watch is armed, which this fleet does not yet do - the merge watch follows exactly one change, so a stack's wake could report one change as the whole stack; publish --shape squash
+[exit=1]
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-brief.sh g-local SlnkFindMy --mode local-only --forge gerrit
+error: fm-brief.sh --forge: forge=gerrit cannot ship mode=local-only - that mode publishes nothing, so a forge has no meaning there, and its landing would fast-forward local main with content the review server has never seen; ship no-mistakes or direct-PR, which publish through the forge
+[exit=1]
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-brief.sh g-direct SlnkFindMy --mode direct-PR --forge gerrit --shape squash
+scaffolded: /tmp/fm-gerrit-live/home-brief/data/g-direct/brief.md (ship, mode=direct-PR forge=gerrit shape=squash; replace {TASK} and {FIRSTMATE_SPEC})
+[exit=0]
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-brief.sh g-nm SlnkFindMy --mode no-mistakes --forge gerrit
+scaffolded: /tmp/fm-gerrit-live/home-brief/data/g-nm/brief.md (ship, mode=no-mistakes forge=gerrit shape=squash; replace {TASK} and {FIRSTMATE_SPEC})
+[exit=0]
+/tmp/fm-gerrit-live/home-brief:
+briefs
+data
+state
+
+/tmp/fm-gerrit-live/home-brief/briefs:
+
+/tmp/fm-gerrit-live/home-brief/data:
+g-direct
+g-nm
+
+/tmp/fm-gerrit-live/home-brief/data/g-direct:
+brief.md
+
+/tmp/fm-gerrit-live/home-brief/data/g-nm:
+brief.md
+
+/tmp/fm-gerrit-live/home-brief/state:

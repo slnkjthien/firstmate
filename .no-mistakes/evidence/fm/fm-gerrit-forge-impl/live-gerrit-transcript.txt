@@ -1,0 +1,128 @@
+=== S1 forge detection at intake
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-forge-detect.sh /home/jthien/Code/SlnkFindMy
+forge=gerrit evidence=origin remote ssh://jthien@gerrit.spectralink.com:29418/spectralink/apps/SlnkFindMy uses SSH port 29418
+[exit=0]
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-forge-detect.sh /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3
+forge=none
+[exit=0]
+
+=== S2 registry forge binding rules
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-project-mode.sh gdirect
+direct-PR off gerrit
+[exit=0]
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-project-mode.sh gnm
+no-mistakes off gerrit
+[exit=0]
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-project-mode.sh glocal
+refused: glocal is registered local-only with forge=gerrit in /tmp/fm-gerrit-live/reg/projects.md; local-only publishes nothing, so a forge has no meaning there, and its landing would fast-forward local main with content the review server has never seen; register no-mistakes or direct-PR to publish through the forge, or drop the forge token to keep the project local
+[exit=3]
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-project-mode.sh gyolo
+refused: +yolo is registered for gyolo but yolo is inactive for forge=gerrit, so this reports yolo=off: a Gerrit Code-Review+2 is a positive attributed claim that a named human approved, and firstmate must not manufacture one (captain's decision 2026-09-15)
+no-mistakes off gerrit
+[exit=0]
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-project-mode.sh gtypo
+refused: unrecognized annotation token "forg=gerrit" registered for gtypo in /tmp/fm-gerrit-live/reg/projects.md; an annotation carries a delivery mode first, then only +yolo and forge=gerrit in any order; correct the registry entry
+[exit=3]
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-project-mode.sh plain
+direct-PR off none
+[exit=0]
+
+=== S3 merge poll reads the real Gerrit change status
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655 gerrit.spectralink.com spectralink/apps/SlnkFindMy 186655
+merged
+[exit=0]
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186656 gerrit.spectralink.com spectralink/apps/SlnkFindMy 186656
+[exit=0]
+# adversarial: stored URL names a different project than the validated path
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/other/+/186655 gerrit.spectralink.com spectralink/apps/SlnkFindMy 186655
+[exit=0]
+
+=== S4 ready gate: HEAD is the published patch set -> accepted and watch armed
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-pr-check.sh t-accept https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186656
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+armed: state/t-accept.check.sh
+[exit=0]
+# meta after arming:
+kind=ship
+mode=direct-PR
+project=/tmp/fm-gerrit-live/wt
+worktree=/tmp/fm-gerrit-live/wt
+pr=https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186656
+contributions.check.sh
+contributions.check-trust
+t-accept.check.sh
+t-accept.meta
+t-accept.pr-poll
+t-accept.pr-poll-registration
+
+=== S5 recorded pr= accepts the done with no gerrit-axi call (reviewer rebase cannot flip it)
+gerrit-axi not on PATH for this call
+accept rc=0 reason=''
+
+=== S6 adversarial: HEAD reachable from refs/remotes (origin/master) but not the patch set -> refused
+HEAD reachable from refs/remotes/origin/HEAD
+HEAD reachable from refs/remotes/origin/master
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-pr-check.sh t-remote https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186656
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: named head a90caf67699207789612a93aa72c1896641bcdb6 is not the published content of https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186656: the change's current patch set does not carry this copy's HEAD tree, or it could not be read
+[exit=1]
+# meta unchanged:
+kind=ship
+mode=direct-PR
+project=/tmp/fm-gerrit-live/wt
+worktree=/tmp/fm-gerrit-live/wt
+
+=== S7 adversarial: a later unpublished commit on top of the patch set -> refused
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-pr-check.sh t-extra https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186656
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: named head 54019b15795a86d9b7366931d0dfa42b4ac9c1e9 is not the published content of https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186656: the change's current patch set does not carry this copy's HEAD tree, or it could not be read
+[exit=1]
+
+=== S8 adversarial: non-canonical Gerrit URL in a published-for-review done -> refused, names canonical form
+url=https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186656/1 rc=1 reason='the published-for-review report does not name a Gerrit change in the canonical https://<host>/c/<project>/+/<number> form'
+url=https://gerrit.spectralink.com/r/c/spectralink/apps/SlnkFindMy/+/186656 rc=1 reason='the published-for-review report does not name a Gerrit change in the canonical https://<host>/c/<project>/+/<number> form'
+
+=== S9 no-mistakes mode: unreadable/absent pipeline run refuses before the tree check
+
+$ /home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-pr-check.sh t-nm https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186656
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: the no-mistakes run for this copy could not be read, so its fixes cannot be proven recovered
+[exit=1]

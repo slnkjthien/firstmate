@@ -1,0 +1,4 @@
+fm-forge-detect exit=0
+fm-pr-check-security exit=0
+fm-crew-state exit=0
+fm-task-delivery exit=0

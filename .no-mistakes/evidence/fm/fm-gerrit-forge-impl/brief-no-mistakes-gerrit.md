@@ -19,7 +19,7 @@ You are in a disposable git worktree of SlnkFindMy, at a detached HEAD on a clea
 The path check is authoritative: `git rev-parse --git-dir` and `git rev-parse --git-common-dir` can help inspect the repo, but they do not prove you are outside the primary checkout.
 If the top-level path is the primary checkout or not the worktree you were launched in, STOP - do not branch or commit here - append `blocked [at=<epoch>]: launched in primary checkout, not an isolated worktree` to the status file and stop.
 
-1. First action: create your branch: `git checkout -b fm/t-nm`
+1. First action: create your branch: `git checkout -b fm/g-nm`
 2. Run `no-mistakes doctor`; if it reports the repo is not initialized here, run `no-mistakes init`.
 
 # Rules
@@ -27,7 +27,7 @@ If the top-level path is the primary checkout or not the worktree you were launc
 2. Stay inside this worktree; modify nothing outside it.
 3. Use gh-axi for GitHub operations and chrome-devtools-axi for browser operations.
 4. Report status by appending one line:
-   `echo "{state} [at=<epoch>]: {one short line}" >> '/tmp/fm-gerrit-intake.AntcQX/home/state/t-nm.status' && { [ ! -e '/tmp/fm-gerrit-intake.AntcQX/home/config/fleet-ledger' ] || '/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37ADDWYM1N7ZPT4G9PBT882/bin/fm-fleet-ledger.sh' appended '/tmp/fm-gerrit-intake.AntcQX/home/config' '/tmp/fm-gerrit-intake.AntcQX/home/state/t-nm.status' >/dev/null 2>&1 || true; }`
+   `echo "{state} [at=<epoch>]: {one short line}" >> '/tmp/fm-gerrit-live/home-brief/state/g-nm.status' && { [ ! -e '/tmp/fm-gerrit-live/home-brief/config/fleet-ledger' ] || '/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-fleet-ledger.sh' appended '/tmp/fm-gerrit-live/home-brief/config' '/tmp/fm-gerrit-live/home-brief/state/g-nm.status' >/dev/null 2>&1 || true; }`
    States: working, needs-decision, blocked, paused, done, failed.
    Substitute `<epoch>` with the current Unix time in seconds - run `date +%s` and write the number it printed; a stamp that is not plain digits records no time at all.
    Each append wakes firstmate, so report sparingly: only phase changes a supervisor
@@ -46,8 +46,8 @@ If the top-level path is the primary checkout or not the worktree you were launc
 5. If you hit the same obstacle twice, append `blocked [at=<epoch>]: {why}` and stop; firstmate will help.
 6. If a decision belongs above the implementation worker (product choices, destructive actions),
    append `needs-decision [at=<epoch>]: {summary of options}` and stop. Firstmate will reply with the decision.
-   For a no-mistakes ask-user gate specifically, escalate all ask-user findings as one event plus one snapshot file, using that same shape even when the gate holds only a single ask-user finding: write only the ask-user findings, verbatim and unparaphrased (id, severity, file, line, description, authority), to `/tmp/fm-gerrit-intake.AntcQX/home/data/t-nm/nm-<run>-findings.txt`, then report the gate with
-   `needs-decision [at=<epoch>] [key=nm-<run>-<step>]: ask-user findings=<id1>,<id2>,... file=/tmp/fm-gerrit-intake.AntcQX/home/data/t-nm/nm-<run>-findings.txt`
+   For a no-mistakes ask-user gate specifically, escalate all ask-user findings as one event plus one snapshot file, using that same shape even when the gate holds only a single ask-user finding: write only the ask-user findings, verbatim and unparaphrased (id, severity, file, line, description, authority), to `/tmp/fm-gerrit-live/home-brief/data/g-nm/nm-<run>-findings.txt`, then report the gate with
+   `needs-decision [at=<epoch>] [key=nm-<run>-<step>]: ask-user findings=<id1>,<id2>,... file=/tmp/fm-gerrit-live/home-brief/data/g-nm/nm-<run>-findings.txt`
    naming every ask-user finding id from that gate. The status line only points at the file; it never restates or summarizes a finding's content.
    A decision or blocker you opened stays open until a `resolved` line carrying its exact key lands; a later `done:` or `working:` line never closes it, even when the answer is what started that work.
    Firstmate's reply normally writes that closing line at answer time; when a blocker or wait clears WITHOUT a firstmate reply, append `resolved [at=<epoch>]: {how it cleared}` yourself (same `[key=<slug>]` if you opened it with one) as you resume.
@@ -65,15 +65,15 @@ If the top-level path is the primary checkout or not the worktree you were launc
    timed-out call was only waiting for a read while the run kept working.
 
 # Firstmate instruction inbox
-Firstmate steers you through durable message files in '/tmp/fm-gerrit-intake.AntcQX/home/state/t-nm.inbox'.
-When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/tmp/fm-gerrit-intake.AntcQX/home/state/t-nm.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/tmp/fm-gerrit-intake.AntcQX/home/state/t-nm.inbox'/NNN.msg '/tmp/fm-gerrit-intake.AntcQX/home/state/t-nm.inbox'/handled/`.
+Firstmate steers you through durable message files in '/tmp/fm-gerrit-live/home-brief/state/g-nm.inbox'.
+When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/tmp/fm-gerrit-live/home-brief/state/g-nm.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/tmp/fm-gerrit-live/home-brief/state/g-nm.inbox'/NNN.msg '/tmp/fm-gerrit-live/home-brief/state/g-nm.inbox'/handled/`.
 The move IS the acknowledgement: without it firstmate rings again and eventually treats you as stuck. An empty or absent inbox needs no action.
 
 # Project memory
-If `AGENTS.md` or `CLAUDE.md` already exists, or if this task produced durable project-intrinsic knowledge, run `/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37ADDWYM1N7ZPT4G9PBT882/bin/fm-ensure-agents-md.sh .` in the worktree.
+If `AGENTS.md` or `CLAUDE.md` already exists, or if this task produced durable project-intrinsic knowledge, run `/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-ensure-agents-md.sh .` in the worktree.
 Record only project knowledge useful to almost every future session.
 For anything the codebase already shows, prefer a pointer to the authoritative file, command, or doc over copying the detail.
-If you touch a project `AGENTS.md`, follow `/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37ADDWYM1N7ZPT4G9PBT882/bin/fm-ensure-agents-md.sh`'s self-governance contract in the same pass.
+If you touch a project `AGENTS.md`, follow `/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37KK93C409PPZ9FCY0M6CC3/bin/fm-ensure-agents-md.sh`'s self-governance contract in the same pass.
 Keep it proportionate: skip `AGENTS.md` edits for trivial tasks that produced no durable project knowledge.
 
 # Definition of done
@@ -116,9 +116,10 @@ Because `push` is skipped, the pipeline's fixes DO NOT arrive in your checkout: 
 Your tree never goes dirty and nothing interrupts you, so a passed run whose fixes are still in the gate looks exactly like a passed run whose fixes you already have.
 You may not publish until you have closed that gap:
 1. After the run reaches its outcome, read `branch_sync.next_action` from `no-mistakes axi status`.
-2. When its code is `recover_custody`, run the exact command that status prints - `no-mistakes axi sync --recover` - and confirm `branch_sync.state` comes back `custody_returned` on a clean tree. The printed command is authoritative if it differs.
-3. Confirm with `git log` that `fm/t-nm` now carries every fix commit the run made, whether or not step 2 was needed.
+2. When its code is `recover_custody`, run the exact command that status prints - `no-mistakes axi sync --recover` - and confirm `branch_sync.state` comes back `custody_returned` on a clean tree. The printed command is authoritative if it differs. The `run_pipeline` next action status reports after recovery is not an instruction to run again: the recovered head is the one the passed run validated, so publish it.
+3. Confirm with `git log` that `fm/g-nm` now carries every fix commit the run made, whether or not step 2 was needed.
 An unrecovered fix round is an unfinished task, never housekeeping: publishing without it is how the UNFIXED code reaches review.
+Your ready report is refused while the run still holds your branch or while your HEAD's tree differs from the run's result.
 
 When the run's outcome is passed and step 3 holds, publish.
 Publish from this copy with `gerrit-axi`, never with `git push`:
