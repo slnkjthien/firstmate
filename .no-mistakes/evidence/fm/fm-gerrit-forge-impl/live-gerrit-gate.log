@@ -1,0 +1,50 @@
+
+=== S5a HEAD is exactly the change's current patch set (45f31158029aab1c167c4d9f2b25c70eb60971c8), direct-PR
+rc=0 
+
+=== S5b HEAD is a squash-equivalent commit (same tree, new parent/message), no-mistakes
+8b57218 squashed locally
+rc=0 
+
+=== S5c worker committed after publishing; HEAD reachable from refs/remotes/no-mistakes/* (gate push) - must still refuse
+  no-mistakes/fm/live
+rc=1 reason: named head 1757541401524cc8ab050bf374770d7bb0709780 is not the published content of https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/182804: the change's current patch set does not carry this copy's HEAD tree, or it could not be read
+
+=== S5d same for direct-PR
+rc=1 reason: named head 1757541401524cc8ab050bf374770d7bb0709780 is not the published content of https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/182804: the change's current patch set does not carry this copy's HEAD tree, or it could not be read
+
+=== S5e done names a change number that does not exist on the server
+rc=1 reason: named head 1757541401524cc8ab050bf374770d7bb0709780 is not the published content of https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/999999999: the change's current patch set does not carry this copy's HEAD tree, or it could not be read
+
+=== S6 fm-pr-check.sh arming a Gerrit change (scratch FM_HOME)
+-- S6a mismatched HEAD refused, nothing recorded
+error: named head 4268aa675312f900cf1752dd42d7f5e48692a161 is not the published content of https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/182804: the change's current patch set does not carry this copy's HEAD tree, or it could not be read
+rc=1
+(no pr= recorded)
+0
+-- S6b matching HEAD armed; pr= recorded, no pr_head
+armed: state/t-ok.check.sh
+rc=0
+pr=https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/182804
+t-ok.check.sh
+t-ok.meta
+t-ok.pr-poll
+t-ok.pr-poll-registration
+
+=== S7 after arming, worker copy diverges (as if server rebased); recorded pr= still accepts with NO gerrit-axi call
+rc=0 
+(gerrit-axi was not invoked)
+-- contrast: an unrecorded task with the same diverged HEAD is refused (live read)
+rc=1 reason: named head 90a1411644fef954e9e5d0b3c8eb4a272f07e85d is not the published content of https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/182804: the change's current patch set does not carry this copy's HEAD tree, or it could not be read
+
+=== S8 merge poll (fm-pr-poll.sh) against real changes
+-- merged change 182804:
+merged
+rc=0
+-- open change 186649 (expect silence):
+rc=0
+-- abandoned change 181792 (expect silence):
+rc=0
+-- armed sidecar check script for t-ok (run as fm-watch.sh does: bash <check>, from /):
+merged
+rc=0
