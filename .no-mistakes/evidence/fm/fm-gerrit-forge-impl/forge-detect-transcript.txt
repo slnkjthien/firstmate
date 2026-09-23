@@ -1,0 +1,16 @@
+# fm-forge-detect.sh transcript
+$ fm-forge-detect.sh /tmp/tmp.Lndryq1it9/gh   (origin: git@github.com:kunchenguid/firstmate.git)
+forge=none
+rc=0
+$ fm-forge-detect.sh /tmp/tmp.Lndryq1it9/gssh   (origin: ssh://jthien@gerrit.example.com:29418/SlnkFindMy)
+forge=gerrit evidence=origin remote ssh://jthien@gerrit.example.com:29418/SlnkFindMy uses SSH port 29418
+rc=0
+$ fm-forge-detect.sh /tmp/tmp.Lndryq1it9/grefspec   (origin: https://gerrit.example.com/SlnkFindMy)
+forge=gerrit evidence=origin push refspec HEAD:refs/for/main targets refs/for/
+rc=0
+$ fm-forge-detect.sh /home/jthien/Code/SlnkFindMy   (origin: ssh://jthien@gerrit.spectralink.com:29418/spectralink/apps/SlnkFindMy)
+forge=gerrit evidence=origin remote ssh://jthien@gerrit.spectralink.com:29418/spectralink/apps/SlnkFindMy uses SSH port 29418
+rc=0
+$ fm-forge-detect.sh /tmp/tmp.Lndryq1it9/nonexistent   (origin: )
+error: /tmp/tmp.Lndryq1it9/nonexistent is not a git work tree
+rc=2

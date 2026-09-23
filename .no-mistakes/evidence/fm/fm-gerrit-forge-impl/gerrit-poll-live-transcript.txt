@@ -1,0 +1,16 @@
+# fm-pr-poll.sh against live gerrit.spectralink.com (read-only gerrit-axi show), cwd=/tmp (no repository)
+$ fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655 gerrit.spectralink.com spectralink/apps/SlnkFindMy 186655
+rc=0 stdout=[merged]
+$ fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkOTA/+/186649 gerrit.spectralink.com spectralink/apps/SlnkOTA 186649
+rc=0 stdout=[]
+$ fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186656 gerrit.spectralink.com spectralink/apps/SlnkFindMy 186656
+rc=0 stdout=[]
+# adversarial: stored URL not reconstructible from components (patch-set suffix) must stay silent
+$ fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655/1 gerrit.spectralink.com spectralink/apps/SlnkFindMy 186655
+rc=0 stdout=[]
+# adversarial: host doctored to github.com must stay silent
+$ fm-pr-poll.sh --validated gerrit https://github.com/c/x/+/186655 github.com x 186655
+rc=0 stdout=[]
+# sidecar-driven (the form the armed watch actually runs)
+$ t.check.sh (sidecar: change 183612)
+rc=0 stdout=[merged]

@@ -1,0 +1,4 @@
+$ fm-pr-merge.sh t-merge https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655   (gerrit-axi on PATH replaced by a call logger)
+error: firstmate does not submit a Gerrit change: submitting requires an attributed human approval it must not manufacture, so a human submits the change on the server
+rc=2
+gerrit-axi calls: []

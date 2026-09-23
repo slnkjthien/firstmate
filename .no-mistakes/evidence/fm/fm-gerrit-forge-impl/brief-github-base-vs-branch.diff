@@ -1,0 +1,12 @@
+30c30
+<    `echo "{state} [at=<epoch>]: {one short line}" >> 'HOME/state/t-gh.status' && { [ ! -e 'HOME/config/fleet-ledger' ] || '/tmp/tmp.Lndryq1it9/basetree/bin/fm-fleet-ledger.sh' appended 'HOME/config' 'HOME/state/t-gh.status' >/dev/null 2>&1 || true; }`
+---
+>    `echo "{state} [at=<epoch>]: {one short line}" >> 'HOME/state/t-gh.status' && { [ ! -e 'HOME/config/fleet-ledger' ] || '/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37RFWTBZ1MVGR26WYDYHRMN/bin/fm-fleet-ledger.sh' appended 'HOME/config' 'HOME/state/t-gh.status' >/dev/null 2>&1 || true; }`
+73c73
+< If `AGENTS.md` or `CLAUDE.md` already exists, or if this task produced durable project-intrinsic knowledge, run `/tmp/tmp.Lndryq1it9/basetree/bin/fm-ensure-agents-md.sh .` in the worktree.
+---
+> If `AGENTS.md` or `CLAUDE.md` already exists, or if this task produced durable project-intrinsic knowledge, run `/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37RFWTBZ1MVGR26WYDYHRMN/bin/fm-ensure-agents-md.sh .` in the worktree.
+76c76
+< If you touch a project `AGENTS.md`, follow `/tmp/tmp.Lndryq1it9/basetree/bin/fm-ensure-agents-md.sh`'s self-governance contract in the same pass.
+---
+> If you touch a project `AGENTS.md`, follow `/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37RFWTBZ1MVGR26WYDYHRMN/bin/fm-ensure-agents-md.sh`'s self-governance contract in the same pass.

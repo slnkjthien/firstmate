@@ -9,8 +9,8 @@ ok - fm-promote: promotion requires the delivery contract and records it exactly
 ok - fm-promote: a symlinked task record is refused and its target is left untouched
 ok - fm-promote: a promoted worker receives the same mode-specific delivery contract a briefed one does
 ok - fm-project-mode: the conditional policy is accepted, mapped for mechanical callers, and readable raw
-ok - fm-project-mode: the forge binds from its own explicit token, orthogonal to mode and yolo
-ok - fm-project-mode: an annotation token the parser does not recognize is refused, never discarded
+ok - fm-project-mode: the forge binds from its own token and is reported only through --forge
+ok - fm-project-mode: only a malformed forge binding refuses; every other token keeps its old tolerance
 ok - forge=gerrit: yolo is refused with its reason, never silently dropped
 ok - forge=gerrit: no-mistakes runs with its forge steps skipped, recovers its fixes, then publishes one change
 ok - forge=gerrit: direct-PR publishes one squashed change and a stack is refused with its reason

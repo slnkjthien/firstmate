@@ -1,0 +1,15 @@
+$ fm-brief.sh t-nm findmy --mode no-mistakes --forge gerrit
+scaffolded: /tmp/tmp.Lndryq1it9/home/data/t-nm/brief.md (ship, mode=no-mistakes forge=gerrit shape=squash; replace {TASK} and {FIRSTMATE_SPEC})
+rc=0
+$ fm-brief.sh t-dpr gdpr --mode direct-PR --forge gerrit
+scaffolded: /tmp/tmp.Lndryq1it9/home/data/t-dpr/brief.md (ship, mode=direct-PR forge=gerrit shape=squash; replace {TASK} and {FIRSTMATE_SPEC})
+rc=0
+$ fm-brief.sh t-stack findmy --mode no-mistakes --forge gerrit --shape stack
+error: --shape stack is refused: a stack is several changes, and it must be watched by its membership pinned when its watch is armed, which this fleet does not yet do - the merge watch follows exactly one change, so a stack's wake could report one change as the whole stack; publish --shape squash
+rc=1
+$ fm-brief.sh t-local glocal --mode local-only --forge gerrit
+error: fm-brief.sh --forge: forge=gerrit cannot ship mode=local-only - that mode publishes nothing, so a forge has no meaning there, and its landing would fast-forward local main with content the review server has never seen; ship no-mistakes or direct-PR, which publish through the forge
+rc=1
+$ fm-brief.sh t-gh plain --mode no-mistakes
+scaffolded: /tmp/tmp.Lndryq1it9/home/data/t-gh/brief.md (ship, mode=no-mistakes; replace {TASK} and {FIRSTMATE_SPEC})
+rc=0

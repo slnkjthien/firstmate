@@ -13,21 +13,21 @@ If the task will start, stop, delete, restart, profile, or otherwise drive Herdr
 Do not add Herdr lifecycle commands to this unguarded brief by hand.
 
 # Setup
-You are in a disposable git worktree of findmy, at a detached HEAD on a clean default branch.
+You are in a disposable git worktree of plain, at a detached HEAD on a clean default branch.
 
 **Verify isolation before anything else.** Run `pwd -P` and `git rev-parse --show-toplevel`; both must resolve to the disposable task worktree you were launched in, such as a treehouse pool path or an Orca-managed worktree, not the primary checkout firstmate operates from.
 The path check is authoritative: `git rev-parse --git-dir` and `git rev-parse --git-common-dir` can help inspect the repo, but they do not prove you are outside the primary checkout.
 If the top-level path is the primary checkout or not the worktree you were launched in, STOP - do not branch or commit here - append `blocked [at=<epoch>]: launched in primary checkout, not an isolated worktree` to the status file and stop.
 
-1. First action: create your branch: `git checkout -b fm/t-nm`
+1. First action: create your branch: `git checkout -b fm/t-gh`
 2. Run `no-mistakes doctor`; if it reports the repo is not initialized here, run `no-mistakes init`.
 
 # Rules
-1. Never push with git and never create a change except through the one `gerrit-axi publish --squash` your Definition of done names. Never run `gerrit-axi submit`, never vote or review a change by any path, including `gerrit review` or a label option on a push, and never abandon one: a human reviewer approves and submits it on the server.
+1. Never push to the default branch. Never merge a PR.
 2. Stay inside this worktree; modify nothing outside it.
 3. Use gh-axi for GitHub operations and chrome-devtools-axi for browser operations.
 4. Report status by appending one line:
-   `echo "{state} [at=<epoch>]: {one short line}" >> '/tmp/tmp.Lndryq1it9/home/state/t-nm.status' && { [ ! -e '/tmp/tmp.Lndryq1it9/home/config/fleet-ledger' ] || '/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37RFWTBZ1MVGR26WYDYHRMN/bin/fm-fleet-ledger.sh' appended '/tmp/tmp.Lndryq1it9/home/config' '/tmp/tmp.Lndryq1it9/home/state/t-nm.status' >/dev/null 2>&1 || true; }`
+   `echo "{state} [at=<epoch>]: {one short line}" >> '/tmp/tmp.Lndryq1it9/home/state/t-gh.status' && { [ ! -e '/tmp/tmp.Lndryq1it9/home/config/fleet-ledger' ] || '/home/jthien/.no-mistakes/worktrees/153164a827ab/01M37RFWTBZ1MVGR26WYDYHRMN/bin/fm-fleet-ledger.sh' appended '/tmp/tmp.Lndryq1it9/home/config' '/tmp/tmp.Lndryq1it9/home/state/t-gh.status' >/dev/null 2>&1 || true; }`
    States: working, needs-decision, blocked, paused, done, failed.
    Substitute `<epoch>` with the current Unix time in seconds - run `date +%s` and write the number it printed; a stamp that is not plain digits records no time at all.
    Each append wakes firstmate, so report sparingly: only phase changes a supervisor
@@ -46,8 +46,8 @@ If the top-level path is the primary checkout or not the worktree you were launc
 5. If you hit the same obstacle twice, append `blocked [at=<epoch>]: {why}` and stop; firstmate will help.
 6. If a decision belongs above the implementation worker (product choices, destructive actions),
    append `needs-decision [at=<epoch>]: {summary of options}` and stop. Firstmate will reply with the decision.
-   For a no-mistakes ask-user gate specifically, escalate all ask-user findings as one event plus one snapshot file, using that same shape even when the gate holds only a single ask-user finding: write only the ask-user findings, verbatim and unparaphrased (id, severity, file, line, description, authority), to `/tmp/tmp.Lndryq1it9/home/data/t-nm/nm-<run>-findings.txt`, then report the gate with
-   `needs-decision [at=<epoch>] [key=nm-<run>-<step>]: ask-user findings=<id1>,<id2>,... file=/tmp/tmp.Lndryq1it9/home/data/t-nm/nm-<run>-findings.txt`
+   For a no-mistakes ask-user gate specifically, escalate all ask-user findings as one event plus one snapshot file, using that same shape even when the gate holds only a single ask-user finding: write only the ask-user findings, verbatim and unparaphrased (id, severity, file, line, description, authority), to `/tmp/tmp.Lndryq1it9/home/data/t-gh/nm-<run>-findings.txt`, then report the gate with
+   `needs-decision [at=<epoch>] [key=nm-<run>-<step>]: ask-user findings=<id1>,<id2>,... file=/tmp/tmp.Lndryq1it9/home/data/t-gh/nm-<run>-findings.txt`
    naming every ask-user finding id from that gate. The status line only points at the file; it never restates or summarizes a finding's content.
    A decision or blocker you opened stays open until a `resolved` line carrying its exact key lands; a later `done:` or `working:` line never closes it, even when the answer is what started that work.
    Firstmate's reply normally writes that closing line at answer time; when a blocker or wait clears WITHOUT a firstmate reply, append `resolved [at=<epoch>]: {how it cleared}` yourself (same `[key=<slug>]` if you opened it with one) as you resume.
@@ -65,8 +65,8 @@ If the top-level path is the primary checkout or not the worktree you were launc
    timed-out call was only waiting for a read while the run kept working.
 
 # Firstmate instruction inbox
-Firstmate steers you through durable message files in '/tmp/tmp.Lndryq1it9/home/state/t-nm.inbox'.
-When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/tmp/tmp.Lndryq1it9/home/state/t-nm.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/tmp/tmp.Lndryq1it9/home/state/t-nm.inbox'/NNN.msg '/tmp/tmp.Lndryq1it9/home/state/t-nm.inbox'/handled/`.
+Firstmate steers you through durable message files in '/tmp/tmp.Lndryq1it9/home/state/t-gh.inbox'.
+When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/tmp/tmp.Lndryq1it9/home/state/t-gh.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/tmp/tmp.Lndryq1it9/home/state/t-gh.inbox'/NNN.msg '/tmp/tmp.Lndryq1it9/home/state/t-gh.inbox'/handled/`.
 The move IS the acknowledgement: without it firstmate rings again and eventually treats you as stuck. An empty or absent inbox needs no action.
 
 # Project memory
@@ -77,14 +77,11 @@ If you touch a project `AGENTS.md`, follow `/home/jthien/.no-mistakes/worktrees/
 Keep it proportionate: skip `AGENTS.md` edits for trivial tasks that produced no durable project knowledge.
 
 # Definition of done
-Delivery contract: mode=no-mistakes forge=gerrit shape=squash
-This project's review server is Gerrit: it has no pull requests and no forge CI the pipeline can watch, so **no-mistakes runs here as a review pass that ends at a ready branch**, and you then publish that branch as one change.
-Pass `--skip push,pr,ci` on every `no-mistakes axi run` for this task, and skip nothing else: `review`, `test`, `document`, and `lint` are the whole point of the run.
-Those three are the only steps that reach a forge, and skipping them is a supported outcome, not a degraded one.
+Delivery contract: mode=no-mistakes
 The task is complete only when committed on your branch.
 When you believe it is complete, append `done [at=<epoch>]: {summary}` to the status file and stop.
-Firstmate will then instruct you to run /no-mistakes to validate.
-That first `done:` is the handoff that starts the pipeline; it is not a request to publish.
+Firstmate will then instruct you to run /no-mistakes to validate and ship a PR.
+That first `done:` is the handoff that starts the pipeline, which owns the push; it is not a request to push from this copy.
 
 You drive no-mistakes by responding to its gates, not by implementing fixes.
 Follow the guidance no-mistakes itself provides for the mechanics: it loads when you invoke /no-mistakes, and `no-mistakes axi run --help` plus the `help` lines in each `axi` response are authoritative and version-matched to the installed binary.
@@ -101,7 +98,8 @@ Do not hand-edit, commit, or fix findings yourself while a run is active - the p
 One drive call blocks until the next gate or outcome, which routinely outlives what your harness lets a single command run: Claude Code kills a command at ten minutes maximum, while one fix round is capped around thirty minutes and up to three rounds chain.
 So background the drive call instead of sitting in one blocking hold your harness will kill, and read its return when it finishes.
 Where a harness's own command limit is not established, assume it bounds commands and use that same backgrounded shape.
-Whenever a drive call returns without a gate or an outcome - its own wait elapsed, or it was killed or timed out - reattach at once by re-running `no-mistakes axi run` without flags, backgrounded the same way; if it refuses because no run is active, read the finished outcome from `no-mistakes axi status`.
+Only a drive call's return reports the green PR: `no-mistakes axi status` shows progress but never reports `checks-passed` while the ci step is still monitoring the PR for merge, so never wait on a status poll for the next gate or outcome.
+Whenever a drive call returns without a gate or an outcome - its own wait elapsed, or it was killed or timed out - reattach at once by re-running `no-mistakes axi run` without flags, backgrounded the same way; once checks are green it returns `checks-passed` immediately, and if it refuses because no run is active, read the finished outcome from `no-mistakes axi status`.
 A killed or timed-out call is never evidence the daemon died: the daemon accepts your response immediately and runs the round in the background, so the call was only ever waiting for a read while the run kept working.
 Reattach and keep going rather than reporting the pipeline blocked; rule 7 owns the checks that decide when a pipeline block is real.
 
@@ -112,28 +110,8 @@ Two firstmate-specific rules layer on top of that guidance:
 - NEVER pass `--yes` (or `-y`) to `no-mistakes axi run` or `no-mistakes axi respond`. It is banned fleet-wide.
   It auto-resolves every gate including ask-user findings with no escalation, and answering your own ask-user finding is a hard rule violation.
 
-Because `push` is skipped, the pipeline's fixes DO NOT arrive in your checkout: each fix round commits onto a branch inside no-mistakes' own local gate repository, and with no push nothing carries those commits back to you.
-Your tree never goes dirty and nothing interrupts you, so a passed run whose fixes are still in the gate looks exactly like a passed run whose fixes you already have.
-You may not publish until you have closed that gap:
-1. After the run reaches its outcome, read `branch_sync.next_action` from `no-mistakes axi status`.
-2. When its code is `recover_custody`, run the exact command that status prints - `no-mistakes axi sync --recover` - and confirm `branch_sync.state` comes back `custody_returned` on a clean tree. The printed command is authoritative if it differs. The `run_pipeline` next action status reports after recovery is not an instruction to run again: the recovered head is the one the passed run validated, so publish it.
-3. Confirm with `git log` that `fm/t-nm` now carries every fix commit the run made, whether or not step 2 was needed.
-An unrecovered fix round is an unfinished task, never housekeeping: publishing without it is how the UNFIXED code reaches review.
-Your ready report is refused while the run still holds your branch, while its outcome is missing or not passing, or while your HEAD's tree differs from the run's result.
-
-When the run's outcome is passed, passed-with-skips, or passed-with-override and step 3 holds, publish.
-The squashed change carries only the oldest commit's message, so the pipeline's own fix commits never reach the reviewer's description; your report is how they reach the captain.
-After publishing and immediately before your ready report, append one line `note [at=<epoch>]: pipeline changes: {finding} - {fix it made}; {finding} - {fix it made}` to the status file, one short clause per finding the run fixed, taken from the run's `fixes` table and the gate findings its drive calls returned (`no-mistakes axi logs --step <step> --full` has the detail); write `note [at=<epoch>]: pipeline changes: none` when it fixed nothing.
-Publish from this copy with `gerrit-axi`, never with `git push`:
-1. Run `git fetch origin` so the server's branch tip is in this repository; `gerrit-axi` reads its base off the server and refuses when that tip is not here.
-2. Run `gerrit-axi publish --squash --json`, adding `--branch <b>` only when the task names a target branch other than the server's default.
-   It is one push to `refs/for/<branch>` that turns every commit since your branch left the server's branch into ONE change carrying the oldest commit's message, so that message is the review description: make it the one you want reviewed.
-   It keeps any `Change-Id` a commit already carries and stamps one into the oldest commit when it has none, rewriting your local branch's messages only.
-   Never edit, remove, or regenerate a `Change-Id`: a different one creates a different change and orphans the first one's review, while the same one adds a patch set to it.
-   Never pass `--stack`: a stack of changes is not published from this fleet until it can be watched by its membership pinned when its watch is armed, and the watch follows exactly one change.
-3. Read the record it prints: `ok` must be `true`, and the one row of its `changes` table is your change. Its `url` is the change URL; when `url` is null, write `https://<host>/c/<project>/+/<change>` from your `origin` remote's host and that row's `project` and `change`.
-   A failure prints a typed error record instead; fix what it names and publish again, which updates the same change rather than creating another.
-Then append `done [at=<epoch>]: PR {change url} published for review` to the status file and stop. You are finished.
-That `done:` is accepted only when the change's current patch set on the server carries this copy's HEAD tree, so commit nothing after publishing; if you must change the work, commit it and publish again before reporting done.
-A `done:` whose URL is not the canonical `https://<host>/c/<project>/+/<number>` change URL is refused.
-There is no pull request, no `gh-axi` call, and no forge CI result to report: a human reviewer approves and submits the change on the server, and firstmate relays that outcome.
+After /no-mistakes reports CI green (the CI-ready return point - do not wait for it to keep monitoring in the background until merge), read the PR back from the forge and confirm it is not a draft (`gh pr view <url> --json isDraft` must print false); if it is a draft, mark it ready with `gh-axi pr ready`.
+A draft cannot be merged, so a done report on one leaves the merge unasked.
+Then append `done [at=<epoch>]: PR {url} checks green` and stop. You are finished.
+That CI-ready `done:` is accepted only when this copy's HEAD - your latest commit - is one the /no-mistakes run pushed, so commit nothing after the run; the check tests that commit, not merely that a branch moved.
+If you deliberately keep the PR a draft, append `paused [at=<epoch>]: {why the draft is held}` instead of done.

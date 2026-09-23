@@ -1,0 +1,52 @@
+# fm-project-mode.sh registry transcript: base 9296f9b vs branch efb36d2
+## registry
+# Projects
+- plain - legacy default (added 2026-01-01)
+- ghproj [no-mistakes +yolo] - github project (added 2026-01-01)
+- dpr [direct-PR owner=me] - keyed token (added 2026-01-01)
+- ownfirst [owner=me] - keyed first (added 2026-01-01)
+- findmy [no-mistakes forge=gerrit] - SlnkFindMy (added 2026-09-22)
+- gdpr [direct-PR forge=gerrit] - gerrit direct (added 2026-09-22)
+- gyolo [no-mistakes +yolo forge=gerrit] - gerrit yolo (added 2026-09-22)
+- glocal [local-only forge=gerrit] - gerrit local (added 2026-09-22)
+- gbad [no-mistakes forge=githb] - typo value (added 2026-09-22)
+- gempty [no-mistakes forge=] - empty value (added 2026-09-22)
+- gnear [no-mistakes forg=gerrit] - near miss (added 2026-09-22)
+- prod [no-mistakes-prod-only] - policy (added 2026-01-01)
+
+plain            base      rc=0 stdout=[no-mistakes off] stderr=[]
+plain            branch    rc=0 stdout=[no-mistakes off] stderr=[]
+plain    --forge branch    rc=0 stdout=[none] stderr=[]
+ghproj           base      rc=0 stdout=[no-mistakes on] stderr=[]
+ghproj           branch    rc=0 stdout=[no-mistakes on] stderr=[]
+ghproj   --forge branch    rc=0 stdout=[none] stderr=[]
+dpr              base      rc=0 stdout=[direct-PR off] stderr=[]
+dpr              branch    rc=0 stdout=[direct-PR off] stderr=[]
+dpr      --forge branch    rc=0 stdout=[none] stderr=[]
+ownfirst         base      rc=0 stdout=[no-mistakes off] stderr=[warn: unknown mode "owner=me" for ownfirst; defaulting to no-mistakes off]
+ownfirst         branch    rc=0 stdout=[no-mistakes off] stderr=[warn: unknown mode "owner=me" for ownfirst; defaulting to no-mistakes off]
+ownfirst --forge branch    rc=0 stdout=[none] stderr=[warn: unknown mode "owner=me" for ownfirst; defaulting to no-mistakes off]
+prod             base      rc=0 stdout=[no-mistakes off] stderr=[]
+prod             branch    rc=0 stdout=[no-mistakes off] stderr=[]
+prod     --forge branch    rc=0 stdout=[none] stderr=[]
+findmy           base      rc=0 stdout=[no-mistakes off] stderr=[]
+findmy           branch    rc=0 stdout=[no-mistakes off] stderr=[]
+findmy   --forge branch    rc=0 stdout=[gerrit] stderr=[]
+gdpr             base      rc=0 stdout=[direct-PR off] stderr=[]
+gdpr             branch    rc=0 stdout=[direct-PR off] stderr=[]
+gdpr     --forge branch    rc=0 stdout=[gerrit] stderr=[]
+gyolo            base      rc=0 stdout=[no-mistakes on] stderr=[]
+gyolo            branch    rc=0 stdout=[no-mistakes off] stderr=[refused: +yolo is registered for gyolo but yolo is inactive for forge=gerrit, so this reports yolo=off: a Gerrit Code-Review+2 is a positive attributed claim that a named human approved, and firstmate must not manufacture one (captain's decision 2026-09-15)]
+gyolo    --forge branch    rc=0 stdout=[gerrit] stderr=[]
+glocal           base      rc=0 stdout=[local-only off] stderr=[]
+glocal           branch    rc=3 stdout=[] stderr=[refused: glocal is registered local-only with forge=gerrit in /tmp/tmp.Lndryq1it9/data/projects.md; local-only publishes nothing, so a forge has no meaning there, and its landing would fast-forward local main with content the review server has never seen; register no-mistakes or direct-PR to publish through the forge, or drop the forge token to keep the project local]
+glocal   --forge branch    rc=3 stdout=[] stderr=[refused: glocal is registered local-only with forge=gerrit in /tmp/tmp.Lndryq1it9/data/projects.md; local-only publishes nothing, so a forge has no meaning there, and its landing would fast-forward local main with content the review server has never seen; register no-mistakes or direct-PR to publish through the forge, or drop the forge token to keep the project local]
+gbad             base      rc=0 stdout=[no-mistakes off] stderr=[]
+gbad             branch    rc=3 stdout=[] stderr=[refused: unknown forge "githb" registered for gbad in /tmp/tmp.Lndryq1it9/data/projects.md; the accepted value is forge=gerrit, or no forge token at all for a forge whose pull requests no-mistakes already drives; correct the registry entry]
+gbad     --forge branch    rc=3 stdout=[] stderr=[refused: unknown forge "githb" registered for gbad in /tmp/tmp.Lndryq1it9/data/projects.md; the accepted value is forge=gerrit, or no forge token at all for a forge whose pull requests no-mistakes already drives; correct the registry entry]
+gempty           base      rc=0 stdout=[no-mistakes off] stderr=[]
+gempty           branch    rc=3 stdout=[] stderr=[refused: empty forge binding "forge=" registered for gempty in /tmp/tmp.Lndryq1it9/data/projects.md; the accepted value is forge=gerrit, or no forge token at all for a forge whose pull requests no-mistakes already drives; correct the registry entry]
+gempty   --forge branch    rc=3 stdout=[] stderr=[refused: empty forge binding "forge=" registered for gempty in /tmp/tmp.Lndryq1it9/data/projects.md; the accepted value is forge=gerrit, or no forge token at all for a forge whose pull requests no-mistakes already drives; correct the registry entry]
+gnear            base      rc=0 stdout=[no-mistakes off] stderr=[]
+gnear            branch    rc=0 stdout=[no-mistakes off] stderr=[warn: ignoring "forg=gerrit" registered for gnear in /tmp/tmp.Lndryq1it9/data/projects.md; it is not a forge binding, and the forge binding is spelled forge=gerrit]
+gnear    --forge branch    rc=0 stdout=[none] stderr=[warn: ignoring "forg=gerrit" registered for gnear in /tmp/tmp.Lndryq1it9/data/projects.md; it is not a forge binding, and the forge binding is spelled forge=gerrit]
