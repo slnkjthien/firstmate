@@ -1,0 +1,16 @@
+$ fm-project-mode.sh ger
+direct-PR off gerrit
+[exit 0]
+$ fm-project-mode.sh gernm
+refused: +yolo is registered for gernm but yolo is inactive for forge=gerrit, so this reports yolo=off: a Gerrit Code-Review+2 is a positive attributed claim that a named human approved, and firstmate must not manufacture one (captain's decision 2026-09-15)
+no-mistakes off gerrit
+[exit 0]
+$ fm-project-mode.sh gerlo
+refused: gerlo is registered local-only with forge=gerrit in /tmp/fm-gerrit-live.EvyI/data/projects.md; local-only publishes nothing, so a forge has no meaning there, and its landing would fast-forward local main with content the review server has never seen; register no-mistakes or direct-PR to publish through the forge, or drop the forge token to keep the project local
+[exit 3]
+$ fm-project-mode.sh typo
+refused: unrecognized annotation token "forg=gerrit" registered for typo in /tmp/fm-gerrit-live.EvyI/data/projects.md; an annotation carries a delivery mode first, then only +yolo and forge=gerrit in any order; correct the registry entry
+[exit 3]
+$ fm-project-mode.sh plain
+direct-PR off none
+[exit 0]

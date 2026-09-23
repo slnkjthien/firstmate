@@ -1,0 +1,12 @@
+## A: HEAD is the change's current patch set (c068ec0), direct-PR, live read
+[exit 0]
+## B: worker amends HEAD (tree differs); HEAD also pushed to refs/remotes/no-mistakes/fm/task-live (gate push), no-mistakes mode, live read
+HEAD=359f30fca638dfded67d7814af1da3eceef4f3b5 reachable from: refs/remotes/no-mistakes/fm/task-live
+named head 359f30fca638dfded67d7814af1da3eceef4f3b5 is not the published content of https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186488: the change's current patch set does not carry this copy's HEAD tree, or it could not be read
+[exit 1]
+## C: same amended HEAD, but meta records pr=https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186488 (as fm-pr-check does after acceptance); gerrit-axi replaced by a logging failure stub
+[exit 0]
+gerrit-axi calls during C: 0
+## D: unrecorded, gerrit-axi unavailable -> fails closed
+named head 359f30fca638dfded67d7814af1da3eceef4f3b5 is not the published content of https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186488: the change's current patch set does not carry this copy's HEAD tree, or it could not be read
+[exit 1]

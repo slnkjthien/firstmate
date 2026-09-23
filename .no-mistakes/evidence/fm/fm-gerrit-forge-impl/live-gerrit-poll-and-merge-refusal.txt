@@ -1,0 +1,10 @@
+$ bash bin/fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186488 gerrit.spectralink.com spectralink/apps/SlnkDeviceSettings 186488
+merged
+[exit 0]
+$ bash bin/fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655 gerrit.spectralink.com spectralink/apps/SlnkFindMy 186655
+[exit 0]
+$ bash bin/fm-pr-poll.sh --validated gerrit https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/999999999 gerrit.spectralink.com spectralink/apps/SlnkFindMy 999999999
+[exit 0]
+$ bin/fm-pr-merge.sh task-a https://gerrit.spectralink.com/c/spectralink/apps/SlnkFindMy/+/186655
+error: firstmate does not submit a Gerrit change: submitting requires an attributed human approval it must not manufacture, so a human submits the change on the server
+[exit 2]

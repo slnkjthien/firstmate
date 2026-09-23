@@ -1,0 +1,9 @@
+$ fm-forge-detect.sh <clone with origin ssh://...gerrit.spectralink.com:29418/...>
+forge=gerrit evidence=origin remote ssh://jthien@gerrit.spectralink.com:29418/spectralink/apps/SlnkDeviceSettings uses SSH port 29418
+[exit 0]
+$ fm-forge-detect.sh <clone with github https origin>
+forge=none
+[exit 0]
+$ fm-forge-detect.sh /nonexistent
+error: /nonexistent is not a git work tree
+[exit 2]
