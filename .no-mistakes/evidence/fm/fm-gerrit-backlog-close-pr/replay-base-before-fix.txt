@@ -1,0 +1,22 @@
+tasks-axi 0.2.6; checkout HEAD: 260c4f0
+--- pending record before session start:
+id=replay-gerrit-b9
+data=/tmp/fm-backlog-atomicity.UamEsB/live-replay-gerrit/home/data
+spawn_gen=spawn-replay
+arg=--pr
+arg=https://gerrit.example.com/c/project/+/12345
+row state before: in_flight
+
+=== session start #1
+BACKLOG_RECONCILE: replay-gerrit-b9: recorded backlog close could not be replayed: error: "Task pr link must be a canonical pull request URL: https://github.com/<owner>/<repo>/pull/<n> (GitHub) or https://<host>/<owner>/<repo>/pulls/<n> (Forgejo)"
+row state: in_flight
+  links: none
+  body: ""
+pending record: STILL PRESENT
+
+=== session start #2
+BACKLOG_RECONCILE: replay-gerrit-b9: recorded backlog close could not be replayed: error: "Task pr link must be a canonical pull request URL: https://github.com/<owner>/<repo>/pull/<n> (GitHub) or https://<host>/<owner>/<repo>/pulls/<n> (Forgejo)"
+row state: in_flight
+  links: none
+  body: ""
+pending record: STILL PRESENT

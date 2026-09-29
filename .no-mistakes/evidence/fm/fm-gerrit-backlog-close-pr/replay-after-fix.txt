@@ -1,0 +1,21 @@
+tasks-axi 0.2.6; checkout HEAD: 6dc5169
+--- pending record before session start:
+id=replay-gerrit-b9
+data=/tmp/fm-backlog-atomicity.D8sJDZ/live-replay-gerrit/home/data
+spawn_gen=spawn-replay
+arg=--pr
+arg=https://gerrit.example.com/c/project/+/12345
+row state before: in_flight
+
+=== session start #1
+BOOTSTRAP_INFO: closed the backlog item for replay-gerrit-b9 that an interrupted cleanup left open
+row state: done
+  links: none
+  body: "Gerrit change https://gerrit.example.com/c/project/+/12345"
+pending record: absent
+
+=== session start #2
+row state: done
+  links: none
+  body: "Gerrit change https://gerrit.example.com/c/project/+/12345"
+pending record: absent
