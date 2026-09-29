@@ -1,0 +1,70 @@
+===== [target] /home/jthien/.no-mistakes/worktrees/153164a827ab/01M3Q3Z8VJKZ51FE7BQNWYZ3JA
+--- case: gerrit  (pr=: pr=https://gerrit.example.com/c/team/apps/widget/+/12345 )
+$ fm-bearings-snapshot.sh --json | jq .contributions
+{"known":1,"checked":0,"unmeasured":1,"counts":{"captain":0,"fleet":0,"maintainer":0,"nobody":0},"complete":false,"proven_clear":false}
+$ fm-fleet-snapshot.sh --contribution-input | fm-contributions.sh snapshot --all
+{"known":1,"unmeasured":1,"rows":[{"task":"task-g","url":"https://gerrit.example.com/c/team/apps/widget/+/12345","actor":"unmeasured","reason":"unsupported forge; coverage is unmeasured"}]}
+$ fm-contributions.sh poll
+(exit 0)
+durable records: 
+--- case: gitlab  (pr=: pr=https://gitlab.com/o/r/-/merge_requests/2 )
+$ fm-bearings-snapshot.sh --json | jq .contributions
+{"known":1,"checked":0,"unmeasured":1,"counts":{"captain":0,"fleet":0,"maintainer":0,"nobody":0},"complete":false,"proven_clear":false}
+$ fm-fleet-snapshot.sh --contribution-input | fm-contributions.sh snapshot --all
+{"known":1,"unmeasured":1,"rows":[{"task":"task-l","url":"https://gitlab.com/o/r/-/merge_requests/2","actor":"unmeasured","reason":"unsupported forge; coverage is unmeasured"}]}
+$ fm-contributions.sh poll
+/home/jthien/.no-mistakes/worktrees/153164a827ab/01M3Q3Z8VJKZ51FE7BQNWYZ3JA/bin/fm-contributions.sh: line 386: BUDGET_EXHAUSTED: unbound variable
+(exit 1)
+durable records: 
+--- case: both  (pr=: pr=https://gerrit.example.com/c/team/apps/widget/+/12345 pr=https://gitlab.com/o/r/-/merge_requests/2 )
+$ fm-bearings-snapshot.sh --json | jq .contributions
+{"known":2,"checked":0,"unmeasured":2,"counts":{"captain":0,"fleet":0,"maintainer":0,"nobody":0},"complete":false,"proven_clear":false}
+$ fm-fleet-snapshot.sh --contribution-input | fm-contributions.sh snapshot --all
+{"known":2,"unmeasured":2,"rows":[{"task":"task-g","url":"https://gerrit.example.com/c/team/apps/widget/+/12345","actor":"unmeasured","reason":"unsupported forge; coverage is unmeasured"},{"task":"task-l","url":"https://gitlab.com/o/r/-/merge_requests/2","actor":"unmeasured","reason":"unsupported forge; coverage is unmeasured"}]}
+$ fm-contributions.sh poll
+/home/jthien/.no-mistakes/worktrees/153164a827ab/01M3Q3Z8VJKZ51FE7BQNWYZ3JA/bin/fm-contributions.sh: line 386: BUDGET_EXHAUSTED: unbound variable
+(exit 1)
+durable records: 
+--- case: gerrit-patchset  (pr=: pr=https://gerrit.example.com/c/team/apps/widget/+/12345/2 )
+$ fm-bearings-snapshot.sh --json | jq .contributions
+{"known":0,"checked":0,"unmeasured":0,"counts":{"captain":0,"fleet":0,"maintainer":0,"nobody":0},"complete":false,"proven_clear":false}
+$ fm-fleet-snapshot.sh --contribution-input | fm-contributions.sh snapshot --all
+{"known":0,"unmeasured":0,"rows":[]}
+$ fm-contributions.sh poll
+(exit 0)
+durable records: 
+--- case: gerrit-newline  (pr=: pr=https://gerrit.example.com/c/team/apps/widget/+/12345\n )
+$ fm-bearings-snapshot.sh --json | jq .contributions
+{"known":0,"checked":0,"unmeasured":0,"counts":{"captain":0,"fleet":0,"maintainer":0,"nobody":0},"complete":false,"proven_clear":false}
+$ fm-fleet-snapshot.sh --contribution-input | fm-contributions.sh snapshot --all
+{"known":0,"unmeasured":0,"rows":[]}
+$ fm-contributions.sh poll
+(exit 0)
+durable records: 
+--- case: gerrit-githubhost  (pr=: pr=https://github.com/c/team/widget/+/12345 )
+$ fm-bearings-snapshot.sh --json | jq .contributions
+{"known":0,"checked":0,"unmeasured":0,"counts":{"captain":0,"fleet":0,"maintainer":0,"nobody":0},"complete":false,"proven_clear":false}
+$ fm-fleet-snapshot.sh --contribution-input | fm-contributions.sh snapshot --all
+{"known":0,"unmeasured":0,"rows":[]}
+$ fm-contributions.sh poll
+(exit 0)
+durable records: 
+--- human Bearings (gerrit+gitlab case)
+3-generated: "2026-09-29T17:41:33Z"
+4-prs: "not_requested (run: /bearings include PRs)"
+5:contributions: 
+6:  scope: owned contributions per home
+7-  known: 1
+8-  checked: 0
+9-  counts: 
+10-    captain: 0
+--
+14-  complete: false
+15-  proven_clear: false
+16:  unmeasured_homes: 0
+17-  unreadable_records: 1
+18:  unmeasured: 1
+19-  stale_verdicts: 0
+20-  missing_verdicts: 0
+21-  captain_omitted: 0
+22-  captain: []

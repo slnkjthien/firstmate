@@ -1,0 +1,8 @@
+ok - retired ownership persists and unsupported forge remains visibly unmeasured
+ok - unsupported forge coverage is disclosed without inventing fleet work
+ok - held unsupported forge coverage remains unmeasured
+ok - a Gerrit change is known, unmeasured, and never observed
+ok - expired child unsupported-forge coverage remains unmeasured
+ok - a genuine forge failure inside the budget still records the error and wakes
+ok - a genuinely unavailable forge records an error and wakes once per failure episode
+ok - a late owner does not restart a shared forge failure episode
