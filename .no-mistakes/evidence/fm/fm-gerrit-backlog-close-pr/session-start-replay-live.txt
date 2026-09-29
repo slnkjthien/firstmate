@@ -1,0 +1,17 @@
+== pending record (as left by pre-fix teardown):
+id=gerrit-land-x1
+data=/tmp/fm-lab.mohX7R/data
+spawn_gen=teardown-test-task-x1
+cleanup_incomplete=0
+arg=--pr
+arg=https://gerrit.example.com/c/project/+/12345
+
+== [base] bin/fm-bootstrap.sh (session start) with FM_HOME=lab
+BACKLOG_RECONCILE: gerrit-land-x1: recorded backlog close could not be replayed: error: "Task pr link must be a canonical pull request URL: https://github.com/<owner>/<repo>/pull/<n> (GitHub) or https://<host>/<owner>/<repo>/pulls/<n> (Forgejo)"
+-- row:   state: in_flight   links: none   body: "" 
+-- record: present
+
+== [head] bin/fm-bootstrap.sh (session start) with FM_HOME=lab
+BOOTSTRAP_INFO: closed the backlog item for gerrit-land-x1 that an interrupted cleanup left open
+-- row:   state: done   links: none   body: "Gerrit change https://gerrit.example.com/c/project/+/12345" 
+-- record: absent
