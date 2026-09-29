@@ -1,0 +1,4 @@
+note=PR https://gerrit.example/c/demo/+/4242 published for review; pipeline summary posted on patch set 3
+  url=https://gerrit.example/c/demo/+/4242  published  canonical gerrit
+note=PR https://gerrit.example/r/c/demo/+/4242/3 published for review; pipeline summary posted on patch set 3
+  url=https://gerrit.example/r/c/demo/+/4242/3  published  REFUSED non-canonical

@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "op": "message",
+  "change": 4242,
+  "patch_set": 3,
+  "revision": "abc123",
+  "project": "demo",
+  "branch": "main",
+  "subject": "Add thing",
+  "url": "https://gerrit.example/c/demo/+/4242",
+  "chars": 101,
+  "help": [
+    "Run `gerrit-axi show 4242 --messages all --host gerrit.example --port 29418 --user worker --project demo` for the conversation including this message"
+  ]
+}
+-p 29418 -o BatchMode=yes -o ConnectTimeout=10 -- worker@gerrit.example gerrit query --format=JSON --current-patch-set --all-approvals --submit-records change:4242 limit:1 
+-p 29418 -o BatchMode=yes -o ConnectTimeout=10 -- worker@gerrit.example gerrit review --message $'\'## no-mistakes pipeline\n- review: unquoted $var in fm-x.sh - quoted it\n- test: it\'\\\'\'s fine; no findings\'' 4242\,3 

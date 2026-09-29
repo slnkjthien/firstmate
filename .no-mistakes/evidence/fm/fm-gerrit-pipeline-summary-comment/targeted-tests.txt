@@ -1,0 +1,11 @@
+ok - a no-mistakes Gerrit ready report requires the pipeline's fixes recovered into the published copy
+PASS test_gerrit_nm_ready_gate_requires_recovered_custody
+rc=0
+# all fm-task-delivery tests passed
+ok - forge=gerrit: no-mistakes runs with its forge steps skipped, recovers its fixes, then publishes one change
+PASS test_forge_gerrit_changes_what_no_mistakes_means
+rc=0
+# all fm-task-delivery tests passed
+ok - forge=gerrit: direct-PR publishes one squashed change and a stack is refused with its reason
+PASS test_forge_gerrit_direct_pr_publishes_one_change
+rc=0
