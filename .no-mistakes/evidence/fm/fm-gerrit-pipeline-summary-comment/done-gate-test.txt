@@ -1,0 +1,2 @@
+ok - a no-mistakes Gerrit ready report requires the pipeline's fixes recovered into the published copy
+rc=0

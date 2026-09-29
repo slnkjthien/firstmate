@@ -1,0 +1,4 @@
+ok - forge=gerrit: no-mistakes runs with its forge steps skipped, recovers its fixes, then publishes one change
+ok - forge=gerrit: direct-PR publishes one squashed change and a stack is refused with its reason
+# all fm-task-delivery tests passed
+rc=0

@@ -1,0 +1,12 @@
+PR https://gerrit.example.com/c/p/+/4242 published for review; pipeline summary posted on patch set 3 => https://gerrit.example.com/c/p/+/4242
+ rc=0
+PR https://gerrit.example.com/c/p/+/4242; pipeline summary posted on patch set 3 => https://gerrit.example.com/c/p/+/4242;
+ rc=0
+PR https://gerrit.example.com/c/p/+/4242x published for review; pipeline summary posted on patch set 3 => https://gerrit.example.com/c/p/+/4242x
+ rc=0
+PR https://gerrit.example.com/c/p/+/4242;pipeline summary posted on patch set 3 => https://gerrit.example.com/c/p/+/4242;pipeline
+ rc=0
+https://gerrit.example.com/c/p/+/4242 => accepted provider=gerrit
+https://gerrit.example.com/c/p/+/4242; => refused
+https://gerrit.example.com/c/p/+/4242x => refused
+https://gerrit.example.com/c/p/+/4242;pipeline => refused
