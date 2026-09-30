@@ -1,0 +1,18 @@
+== stuck record left by base teardown:
+id=task-g1
+data=/tmp/fm-lab.h3P7eK/data
+spawn_gen=live-task-g1
+cleanup_incomplete=0
+arg=--pr
+arg=https://gerrit.example.com/c/project/+/12345
+== replay with BASE code (bin/fm-bootstrap.sh from 65c75b0):
+BACKLOG_RECONCILE: task-g1: recorded backlog close could not be replayed: error: "Task pr link must be a canonical pull request URL: https://github.com/<owner>/<repo>/pull/<n> (GitHub) or https://<host>/<owner>/<repo>/pulls/<n> (Forgejo)"
+state:   state: in_flight ; record: /tmp/fm-lab.h3P7eK/state/task-g1.backlog-close
+== replay with FIXED code (bin/fm-bootstrap.sh from this change):
+BOOTSTRAP_INFO: closed the backlog item for task-g1 that an interrupted cleanup left open
+== after replay: tasks-axi show task-g1 --full
+  state: done
+  closed: 2026-09-30
+  links: none
+  body: "Gerrit change https://gerrit.example.com/c/project/+/12345"
+record: absent

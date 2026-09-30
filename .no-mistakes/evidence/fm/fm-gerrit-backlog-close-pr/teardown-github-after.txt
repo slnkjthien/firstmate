@@ -1,0 +1,37 @@
+== before: tasks-axi show task-h1
+  state: in_flight
+  links: none
+== bin/fm-teardown.sh task-h1  (FM_HOME=lab, real tasks-axi 0.2.6)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.t5jIX0
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/tmp/fm-lab.t5jIX0/proj: skipped: no origin remote
+teardown task-h1 complete (window firstmate:fm-task-h1, worktree /tmp/fm-lab.t5jIX0/wt)
+Backlog: task-h1 is closed in /tmp/fm-lab.t5jIX0/data/backlog.md. Run bin/fm-tasks-axi.sh ready for dependency-cleared candidates, check date gates, and dispatch only work whose blockers are gone and date is due.
+teardown rc=0
+== after: tasks-axi show task-h1 --full
+task:
+  id: task-h1
+  title: "gerrit landing https://github.com/example/repo/pull/7"
+  state: done
+  blocked: no
+  blocked_by: none
+  held: no
+  hold_reason: "-"
+  hold_kind: "-"
+  hold_until: "-"
+  kind: ship
+  repo: "-"
+  priority: "-"
+  created: "-"
+  closed: 2026-09-30
+  deps: none
+  links: "pr:https://github.com/example/repo/pull/7"
+  body: ""
+== pending close record: absent
+LAB=/tmp/fm-lab.t5jIX0
