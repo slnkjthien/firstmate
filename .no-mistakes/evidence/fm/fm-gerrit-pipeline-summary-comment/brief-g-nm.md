@@ -13,7 +13,7 @@ If the task will start, stop, delete, restart, profile, or otherwise drive Herdr
 Do not add Herdr lifecycle commands to this unguarded brief by hand.
 
 # Setup
-You are in a disposable git worktree of review-server-project, at a detached HEAD on a clean default branch.
+You are in a disposable git worktree of review-proj, at a detached HEAD on a clean default branch.
 
 **Verify isolation before anything else.** Run `pwd -P` and `git rev-parse --show-toplevel`; both must resolve to the disposable task worktree you were launched in, such as a treehouse pool path or an Orca-managed worktree, not the primary checkout firstmate operates from.
 The path check is authoritative: `git rev-parse --git-dir` and `git rev-parse --git-common-dir` can help inspect the repo, but they do not prove you are outside the primary checkout.
@@ -24,11 +24,11 @@ If the top-level path is the primary checkout or not the worktree you were launc
 
 # Rules
 1. Never push with git and never create a change except through the one `gerrit-axi publish --squash` your Definition of done names. Never run `gerrit-axi submit`, never vote or review a change by any path, including `gerrit review` or a label option on a push, and never abandon one: a human reviewer approves and submits it on the server.
-   The one exception is the single `gerrit-axi message <change> --file <path>` your Definition of done names, which posts the pipeline summary with no label or vote; post no other message on any change.
+   The one exception is the `gerrit-axi message <change>` your Definition of done names, which posts the pipeline summary with no label or vote, once on each patch set you publish; post no other message on any change.
 2. Stay inside this worktree; modify nothing outside it.
 3. Use gh-axi for GitHub operations and chrome-devtools-axi for browser operations.
 4. Report status by appending one line:
-   `echo "{state} [at=<epoch>]: {one short line}" >> '/tmp/fm-lab.jlEniD/state/g-nm.status' && { [ ! -e '/tmp/fm-lab.jlEniD/config/fleet-ledger' ] || '/home/jthien/.no-mistakes/worktrees/153164a827ab/01M3PX7JDGHG5ZVA26P0SNDXJT/bin/fm-fleet-ledger.sh' appended '/tmp/fm-lab.jlEniD/config' '/tmp/fm-lab.jlEniD/state/g-nm.status' >/dev/null 2>&1 || true; }`
+   `echo "{state} [at=<epoch>]: {one short line}" >> '/tmp/fm-lab.ZjdX9e/state/g-nm.status' && { [ ! -e '/tmp/fm-lab.ZjdX9e/config/fleet-ledger' ] || '/home/jthien/.no-mistakes/worktrees/153164a827ab/01M3SF33K9GKP3E9HYR622NQJQ/bin/fm-fleet-ledger.sh' appended '/tmp/fm-lab.ZjdX9e/config' '/tmp/fm-lab.ZjdX9e/state/g-nm.status' >/dev/null 2>&1 || true; }`
    States: working, needs-decision, blocked, paused, done, failed.
    Substitute `<epoch>` with the current Unix time in seconds - run `date +%s` and write the number it printed; a stamp that is not plain digits records no time at all.
    Each append wakes firstmate, so report sparingly: only phase changes a supervisor
@@ -52,8 +52,8 @@ If the top-level path is the primary checkout or not the worktree you were launc
 5. If you hit the same obstacle twice, append `blocked [at=<epoch>]: {why}` and stop; firstmate will help.
 6. If a decision belongs above the implementation worker (product choices, destructive actions),
    append `needs-decision [at=<epoch>]: {summary of options}` and stop. Firstmate will reply with the decision.
-   For a no-mistakes ask-user gate specifically, escalate all ask-user findings as one event plus one snapshot file, using that same shape even when the gate holds only a single ask-user finding: write only the ask-user findings, verbatim and unparaphrased (id, severity, file, line, description, authority), to `/tmp/fm-lab.jlEniD/data/g-nm/nm-<run>-findings.txt`, then report the gate with
-   `needs-decision [at=<epoch>] [key=nm-<run>-<step>]: ask-user findings=<id1>,<id2>,... file=/tmp/fm-lab.jlEniD/data/g-nm/nm-<run>-findings.txt`
+   For a no-mistakes ask-user gate specifically, escalate all ask-user findings as one event plus one snapshot file, using that same shape even when the gate holds only a single ask-user finding: write only the ask-user findings, verbatim and unparaphrased (id, severity, file, line, description, authority), to `/tmp/fm-lab.ZjdX9e/data/g-nm/nm-<run>-findings.txt`, then report the gate with
+   `needs-decision [at=<epoch>] [key=nm-<run>-<step>]: ask-user findings=<id1>,<id2>,... file=/tmp/fm-lab.ZjdX9e/data/g-nm/nm-<run>-findings.txt`
    naming every ask-user finding id from that gate. The status line only points at the file; it never restates or summarizes a finding's content.
    A decision or blocker you opened stays open until a `resolved` line carrying its exact key lands; a later `done:` or `working:` line never closes it, even when the answer is what started that work.
    Firstmate's reply normally writes that closing line at answer time; when a blocker or wait clears WITHOUT a firstmate reply, append `resolved [at=<epoch>]: {how it cleared}` yourself (same `[key=<slug>]` if you opened it with one) as you resume.
@@ -81,13 +81,13 @@ If the top-level path is the primary checkout or not the worktree you were launc
    `blocked [at=<epoch>]: {what you need}` and stop; firstmate arranges it.
 
 # Firstmate instruction inbox
-Firstmate steers you through durable message files in '/tmp/fm-lab.jlEniD/state/g-nm.inbox'.
-When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/tmp/fm-lab.jlEniD/state/g-nm.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/tmp/fm-lab.jlEniD/state/g-nm.inbox'/NNN.msg '/tmp/fm-lab.jlEniD/state/g-nm.inbox'/handled/`.
+Firstmate steers you through durable message files in '/tmp/fm-lab.ZjdX9e/state/g-nm.inbox'.
+When a terminal message says an instruction is waiting there - and at any natural checkpoint when you are unsure - list '/tmp/fm-lab.ZjdX9e/state/g-nm.inbox'/*.msg, read and act on each message in numeric order, then acknowledge each handled message by moving it: `mv '/tmp/fm-lab.ZjdX9e/state/g-nm.inbox'/NNN.msg '/tmp/fm-lab.ZjdX9e/state/g-nm.inbox'/handled/`.
 The move IS the acknowledgement: without it firstmate rings again and eventually treats you as stuck. An empty or absent inbox needs no action.
 
 # Project memory
 A project's `AGENTS.md` or `CLAUDE.md` is loaded into every agent session in that project, so edit it only to correct information that is factually wrong - including information your own change made wrong - and never to add knowledge because it is missing.
-A correction edits only the wrong text: do not run `/home/jthien/.no-mistakes/worktrees/153164a827ab/01M3PX7JDGHG5ZVA26P0SNDXJT/bin/fm-ensure-agents-md.sh`, create either file, or add sections, headings, or pointers alongside it.
+A correction edits only the wrong text: do not run `/home/jthien/.no-mistakes/worktrees/153164a827ab/01M3SF33K9GKP3E9HYR622NQJQ/bin/fm-ensure-agents-md.sh`, create either file, or add sections, headings, or pointers alongside it.
 
 # Definition of done
 Delivery contract: mode=no-mistakes forge=gerrit shape=squash
@@ -138,7 +138,7 @@ Your ready report is refused while the run still holds your branch, while its ou
 
 When the run's outcome is passed, passed-with-skips, or passed-with-override and step 3 holds, publish.
 The squashed change carries only the oldest commit's message, so the pipeline's own fix commits never reach the reviewer's description; a change-level message on the change is how they reach the reviewer, and your report is how they reach the captain.
-Before publishing, write the summary that message carries to a new file outside this copy, such as one `mktemp` creates, so your tree stays clean: the same content a GitHub pull request's pipeline section carries, one entry per pipeline step that reported findings, naming each finding and the fix the run made or that it was left unfixed, taken from the run's `fixes` table and the gate findings its drive calls returned (`no-mistakes axi logs --step <step> --full` has the detail); when the run reported no findings, the summary says `no findings`.
+Compose the summary that message carries without writing it to any file: the same content a GitHub pull request's pipeline section carries, one entry per pipeline step that reported findings, naming each finding and the fix the run made or that it was left unfixed, taken from the run's `fixes` table and the gate findings its drive calls returned (`no-mistakes axi logs --step <step> --full` has the detail); when the run reported no findings, the summary says `no findings`.
 After posting that message and immediately before your ready report, append one line `note [at=<epoch>]: pipeline changes: {finding} - {fix it made}; {finding} - {fix it made}` to the status file, one short clause per finding the run fixed, taken from the run's `fixes` table and the gate findings its drive calls returned (`no-mistakes axi logs --step <step> --full` has the detail); write `note [at=<epoch>]: pipeline changes: none` when it fixed nothing.
 Publish from this copy with `gerrit-axi`, never with `git push`:
 1. Run `git fetch origin` so the server's branch tip is in this repository; `gerrit-axi` reads its base off the server and refuses when that tip is not here.
@@ -149,11 +149,11 @@ Publish from this copy with `gerrit-axi`, never with `git push`:
    Never pass `--stack`: a stack of changes is not published from this fleet until it can be watched by its membership pinned when its watch is armed, and the watch follows exactly one change.
 3. Read the record it prints: `ok` must be `true`, and the one row of its `changes` table is your change. Its `url` is the change URL; when `url` is null, write `https://<host>/c/<project>/+/<change>` from your `origin` remote's host and that row's `project` and `change`.
    A failure prints a typed error record instead; fix what it names and publish again, which updates the same change rather than creating another.
-4. Post the pipeline summary you wrote as exactly one change-level message: run `gerrit-axi message <change> --file <path> --json` with that row's `change` number and the summary file, and no other option.
+4. After the final publish, post the pipeline summary you composed as exactly one change-level message: pipe it on standard input to `gerrit-axi message <change> --json` with that row's `change` number and no other option, so no file is written.
    It posts on the change's current patch set with no label or vote; its record must show `ok` `true`, and its `patch_set` names the patch set the message landed on.
-   Post it once, after the last publish; a failure prints a typed error record, so fix what it names and post again.
+   A failure prints a typed error record, so fix what it names and post again. If you publish again after posting, post a fresh summary the same way on the new patch set, so the final patch set carries its own.
 5. Append the `note [at=<epoch>]: pipeline changes: ...` line described above.
-Then append `done [at=<epoch>]: PR {change url} published for review; pipeline summary posted on patch set {patch_set}` to the status file and stop. You are finished.
+Then append `done [at=<epoch>]: PR {change url} published for review; pipeline summary posted on patch set {patch_set}` to the status file, with `{patch_set}` from the message posted on the final patch set, and stop. You are finished.
 That `done:` is accepted only when the change's current patch set on the server carries this copy's HEAD tree, so commit nothing after publishing; if you must change the work, commit it and publish again before reporting done.
 A `done:` whose URL is not the canonical `https://<host>/c/<project>/+/<number>` change URL is refused.
 There is no pull request, no `gh-axi` call, and no forge CI result to report: a human reviewer approves and submits the change on the server, and firstmate relays that outcome.

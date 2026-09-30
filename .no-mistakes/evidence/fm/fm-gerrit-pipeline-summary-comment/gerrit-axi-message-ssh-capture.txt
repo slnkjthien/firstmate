@@ -1,0 +1,21 @@
+$ printf "Pipeline summary\n- review: finding A - fixed\n" | gerrit-axi message 4201 --json   (ssh replaced by an argv-capture shim; no server contacted)
+{
+  "ok": true,
+  "op": "message",
+  "change": 4201,
+  "patch_set": 3,
+  "revision": "abc",
+  "project": "p",
+  "branch": "",
+  "subject": "",
+  "url": null,
+  "chars": 44,
+  "help": [
+    "Run `gerrit-axi show 4201 --messages all --host 127.0.0.1 --user tester --project p` for the conversation including this message"
+  ]
+}
+rc=0
+--- ssh argv captured ---
+ARGV: [-p] [29418] [-o] [BatchMode=yes] [-o] [ConnectTimeout=10] [--] [tester@127.0.0.1] [gerrit] [query] [--format=JSON] [--current-patch-set] [--all-approvals] [--submit-records] [change:4201] [limit:1]
+ARGV: [-p] [29418] [-o] [BatchMode=yes] [-o] [ConnectTimeout=10] [--] [tester@127.0.0.1] [gerrit] [review] [--message] ['Pipeline summary
+- review: finding A - fixed'] [4201,3]
