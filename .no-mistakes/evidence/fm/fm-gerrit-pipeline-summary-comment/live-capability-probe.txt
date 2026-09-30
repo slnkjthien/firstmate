@@ -1,0 +1,16 @@
+=== gerrit-axi installed (0.4.0): version=0.4.0
+  mode=no-mistakes forge=gerrit -> rc=0 (no refusal)
+  mode=direct-PR forge=gerrit -> rc=0 (no refusal)
+  mode=no-mistakes forge=github -> rc=0 (no refusal)
+=== gerrit-axi v0.3.0 (real release source): version=0.3.0
+  mode=no-mistakes forge=gerrit -> rc=0 (no refusal)
+  mode=direct-PR forge=gerrit -> rc=0 (no refusal)
+  mode=no-mistakes forge=github -> rc=0 (no refusal)
+=== gerrit-axi v0.2.0 (real release source): version=gerrit-axi 0.2.0
+  mode=no-mistakes forge=gerrit -> rc=1 error: fm-spawn.sh live-probe: a no-mistakes ship to a Gerrit project posts its pipeline summary with `gerrit-axi message`, which the installed gerrit-axi does not support; install gerrit-axi 0.3.0 or later
+  mode=direct-PR forge=gerrit -> rc=0 (no refusal)
+  mode=no-mistakes forge=github -> rc=0 (no refusal)
+=== gerrit-axi absent from PATH: version=none
+  mode=no-mistakes forge=gerrit -> rc=1 error: fm-spawn.sh live-probe: a no-mistakes ship to a Gerrit project publishes and posts its pipeline summary with gerrit-axi, which is not on PATH; install gerrit-axi 0.3.0 or later
+  mode=direct-PR forge=gerrit -> rc=0 (no refusal)
+  mode=no-mistakes forge=github -> rc=0 (no refusal)

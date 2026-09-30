@@ -1,0 +1,19 @@
+### gerrit-axi gerrit-axi 0.2.0 (/tmp/fm-lab.XJ5ICb/bin2)
+  mode=no-mistakes forge=gerrit -> rc=1 error: probe: a no-mistakes ship to a Gerrit project posts its pipeline summary with `gerrit-axi message`, which the installed gerrit-axi does not support; install gerrit-axi 0.4.0 or later
+  mode=direct-PR forge=gerrit -> rc=0 
+  mode=no-mistakes forge=none -> rc=0 
+### gerrit-axi 0.3.0 (/tmp/fm-lab.XJ5ICb/bin3)
+  mode=no-mistakes forge=gerrit -> rc=0 
+  mode=direct-PR forge=gerrit -> rc=0 
+  mode=no-mistakes forge=none -> rc=0 
+### gerrit-axi 0.4.0 (/home/jthien/.local/bin)
+  mode=no-mistakes forge=gerrit -> rc=0 
+  mode=direct-PR forge=gerrit -> rc=0 
+  mode=no-mistakes forge=none -> rc=0 
+
+### fm-spawn.sh t1 (registered forge=gerrit, --mode no-mistakes) with released gerrit-axi 0.2.0 on PATH
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.XJ5ICb
+error: fm-spawn.sh t1: a no-mistakes ship to a Gerrit project posts its pipeline summary with `gerrit-axi message`, which the installed gerrit-axi does not support; install gerrit-axi 0.4.0 or later
+exit=1
+worktrees after:
+/tmp/fm-lab.XJ5ICb/projects/fp  95cb911 [main]

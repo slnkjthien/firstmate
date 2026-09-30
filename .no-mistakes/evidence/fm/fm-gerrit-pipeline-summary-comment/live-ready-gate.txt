@@ -1,0 +1,25 @@
+Real change https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186702, current patch set 3, worktree HEAD = its revision (real gerrit-axi 0.4.0, live server)
+
+### A. no-mistakes, real marker (no pipeline summary on the change): summary never posted
+rc=1 reason: no pipeline summary message is on patch set 3 of https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186702: no change message on the current patch set contains 'no-mistakes pipeline summary'
+
+### B. no-mistakes, marker = a message that IS on patch set 3, done names ps 3 -> accept
+rc=0 
+
+### C. same, but done line omits the patch-set suffix -> refuse
+rc=1 reason: the ready report does not name the patch set its pipeline summary was posted on: end it with '; pipeline summary posted on patch set 3'
+
+### D. same, but done names patch set 2 -> refuse
+rc=1 reason: the ready report names the pipeline summary on patch set 2, but https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186702's current patch set is 3
+
+### E. marker only on superseded patch set 2 (summary posted before a republish) -> refuse
+rc=1 reason: no pipeline summary message is on patch set 3 of https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186702: no change message on the current patch set contains 'Patch set 2 answers the AI review of patch set 1'
+
+### F. direct-PR on same change: no summary required -> accept
+rc=0 
+
+### G. unreadable change (nonexistent number) -> distinct read-failure reason
+rc=1 reason: the current patch set of https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/999999999 could not be read, so its published content cannot be checked
+
+### H. commit after publishing (HEAD tree differs) -> tree mismatch reason
+rc=1 reason: named head 277cd64fee6c39cf39c4ef43b2405d54a3044f63 is not the published content of https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186702: the change's current patch set does not carry this copy's HEAD tree

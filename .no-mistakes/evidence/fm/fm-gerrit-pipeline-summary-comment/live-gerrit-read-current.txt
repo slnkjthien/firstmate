@@ -1,0 +1,10 @@
+## marker: Patch set 3 answers the AI review of patch set 2
+rc=0 reading=5afc39031007d03be82c6db486ed7ca71b095ba2 3 true
+## marker: Patch set 2 answers the AI review of patch set 1
+rc=0 reading=5afc39031007d03be82c6db486ed7ca71b095ba2 3 false
+## marker: no-mistakes pipeline summary
+rc=0 reading=5afc39031007d03be82c6db486ed7ca71b095ba2 3 false
+## no marker (direct-PR read)
+rc=0 reading=5afc39031007d03be82c6db486ed7ca71b095ba2
+## nonexistent change
+rc=1 reading=

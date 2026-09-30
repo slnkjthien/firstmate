@@ -1,0 +1,40 @@
+=== 1. worker skipped the post (real server has no summary message)
+done line: done: PR https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186702 published for review; pipeline summary posted on patch set 3
+marker: no-mistakes pipeline summary
+no pipeline summary message is on patch set 3 of https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186702: no change message on the current patch set contains 'no-mistakes pipeline summary'
+rc=1 (REFUSED)
+
+=== 2. summary present on current PS3 (marker = a real PS3 message line), report names PS3
+done line: done: PR https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186702 published for review; pipeline summary posted on patch set 3
+marker: Patch set 3 answers the AI review
+rc=0 (ACCEPTED)
+
+=== 3. summary present, report names stale PS2
+done line: done: PR https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186702 published for review; pipeline summary posted on patch set 2
+marker: Patch set 3 answers the AI review
+the ready report names the pipeline summary on patch set 2, but https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186702's current patch set is 3
+rc=1 (REFUSED)
+
+=== 4. summary present, report has no patch-set suffix
+done line: done: PR https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186702 published for review
+marker: Patch set 3 answers the AI review
+the ready report does not name the patch set its pipeline summary was posted on: end it with '; pipeline summary posted on patch set 3'
+rc=1 (REFUSED)
+
+=== 5. summary only on superseded PS1 (marker only on PS1 message)
+done line: done: PR https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186702 published for review; pipeline summary posted on patch set 1
+marker: Uploaded patch set 1.
+no pipeline summary message is on patch set 3 of https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186702: no change message on the current patch set contains 'Uploaded patch set 1.'
+rc=1 (REFUSED)
+
+=== 6. unreadable change (bogus change number 999999999)
+the current patch set of https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/999999999 could not be read, so its published content cannot be checked
+rc=1
+
+=== 7. HEAD moved after publishing (commit after publish), summary present
+=== 7
+done line: done: PR https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186702 published for review; pipeline summary posted on patch set 3
+marker: Patch set 3 answers the AI review
+named head 4f6c712a59e94bb333731c772d42dceef6e2e0fe is not the published content of https://gerrit.spectralink.com/c/spectralink/apps/SlnkDeviceSettings/+/186702: the change's current patch set does not carry this copy's HEAD tree
+rc=1 (REFUSED)
+

@@ -1,0 +1,6 @@
+$ fm-spawn.sh t1 $LAB/projects/fp --mode no-mistakes --yolo off   (gerrit-axi NOT on PATH; project registered forge=gerrit)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.XJ5ICb
+error: fm-spawn.sh t1: a no-mistakes ship to a Gerrit project publishes and posts its pipeline summary with gerrit-axi, which is not on PATH; install gerrit-axi 0.4.0 or later
+exit=1
+state after:
+/tmp/fm-lab.XJ5ICb/projects/fp  95cb911 [main]
