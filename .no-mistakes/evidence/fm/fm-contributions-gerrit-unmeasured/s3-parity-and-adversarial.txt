@@ -1,0 +1,17 @@
+pr=https://gerrit.example.com/c/team/apps/widget/+/12345
+{"known":1,"checked":0,"unmeasured":1,"complete":false,"proven_clear":false,"rows":[{"actor":"unmeasured","reason":"unsupported forge; coverage is unmeasured"}]}
+pr=https://gitlab.com/team/widget/-/merge_requests/7
+{"known":1,"checked":0,"unmeasured":1,"complete":false,"proven_clear":false,"rows":[{"actor":"unmeasured","reason":"unsupported forge; coverage is unmeasured"}]}
+
+# adversarial: non-canonical Gerrit-shaped URLs must NOT be counted
+https://gerrit.example.com/c/team/apps/widget/+/12345/2      known=0  (fleet input pr=https://gerrit.example.com/c/team/apps/widget/+/12345/2)
+http://gerrit.example.com/c/team/widget/+/12345              known=0  (fleet input pr=http://gerrit.example.com/c/team/widget/+/12345)
+https://github.com/c/team/widget/+/12345                     known=0  (fleet input pr=https://github.com/c/team/widget/+/12345)
+https://gerrit.example.com/c/team/../widget/+/12345          known=0  (fleet input pr=https://gerrit.example.com/c/team/../widget/+/12345)
+https://gerrit.example.com/c/team/widget.git/+/12345         known=0  (fleet input pr=https://gerrit.example.com/c/team/widget.git/+/12345)
+https://gerrit.example.com/c/team/widget/+/0                 known=0  (fleet input pr=https://gerrit.example.com/c/team/widget/+/0)
+https://Gerrit.Example.com/c/team/widget/+/12345             known=0  (fleet input pr=https://Gerrit.Example.com/c/team/widget/+/12345)
+https://-bad.example.com/c/team/widget/+/1                   known=0  (fleet input pr=https://-bad.example.com/c/team/widget/+/1)
+
+# structured backlog row linking a Gerrit change
+{"known":1,"checked":0,"unmeasured":1,"complete":false,"proven_clear":false}

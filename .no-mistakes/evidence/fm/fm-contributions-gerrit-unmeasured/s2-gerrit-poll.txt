@@ -1,0 +1,6 @@
+$ FM_HOME=$LAB bin/fm-contributions.sh poll
+exit=0
+forge calls logged by gh shim: 0
+records: ls: cannot access '/tmp/fm-lab.2mT9Kv/data/gerrit-task/contributions.json': No such file or directory
+$ bearings after poll
+{"known":1,"checked":0,"unmeasured":1,"complete":false,"proven_clear":false}

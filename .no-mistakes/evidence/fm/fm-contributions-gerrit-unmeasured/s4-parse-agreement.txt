@@ -1,0 +1,9 @@
+# fm_pr_url_parse (bin/fm-pr-lib.sh) vs fm-contributions canonical count
+https://gerrit.example.com/c/team/apps/widget/+/12345      parse=accept
+https://gerrit.example.com/c/team/apps/widget/+/12345/2    parse=reject
+http://gerrit.example.com/c/team/widget/+/12345            parse=reject
+https://gerrit.example.com/c/team/../widget/+/12345        parse=reject
+https://gerrit.example.com/c/team/widget.git/+/12345       parse=reject
+https://gerrit.example.com/c/team/widget/+/0               parse=reject
+https://Gerrit.Example.com/c/team/widget/+/12345           parse=reject
+https://-bad.example.com/c/team/widget/+/1                 parse=reject

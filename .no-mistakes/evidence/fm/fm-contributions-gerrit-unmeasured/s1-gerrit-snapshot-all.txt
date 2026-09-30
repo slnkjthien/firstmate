@@ -1,0 +1,44 @@
+$ fm-contributions.sh snapshot input.json --all
+{
+  "known": 1,
+  "checked": 0,
+  "counts": {
+    "captain": 0,
+    "fleet": 0,
+    "maintainer": 0,
+    "nobody": 0
+  },
+  "unmeasured": 1,
+  "complete": false,
+  "proven_clear": false,
+  "stale_verdicts": 0,
+  "missing_verdicts": 0,
+  "unreadable_records": 0,
+  "valid_until": 900,
+  "captain": [],
+  "captain_omitted": 0,
+  "rows": [
+    {
+      "task": "gerrit-task",
+      "url": "https://gerrit.example.com/c/team/apps/widget/+/12345",
+      "kind": "pr",
+      "checked_at": null,
+      "checked": false,
+      "final": false,
+      "head": null,
+      "verdict": null,
+      "reviews": [],
+      "distinct_checks": 0,
+      "missing_verdicts": 0,
+      "pending_checks": 0,
+      "failed_checks": 0,
+      "stale_verdicts": 0,
+      "signals": [],
+      "actor": "unmeasured",
+      "reason": "unsupported forge; coverage is unmeasured",
+      "tasks": [
+        "gerrit-task"
+      ]
+    }
+  ]
+}
