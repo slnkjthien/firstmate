@@ -1,0 +1,18 @@
+Mixed: Gerrit pr= on task 'delivery' + GitHub PR on backlog row 'gh' (target c34ac01)
+--- bearings before poll
+{"known":2,"checked":0,"unmeasured":1,"complete":false,"proven_clear":false}
+--- poll exit=0 output=[contributions: observation unavailable for https://github.com/o/r/pull/7]
+--- distinct gh invocations:
+  gh api repos/o/r/pulls/7
+gh calls mentioning gerrit: 0
+--- records written:
+/tmp/fm-lab.54eHKN/data/gh/contributions.json
+{"url":"https://github.com/o/r/pull/7","error":"forge observation unavailable or changed during read"}
+--- bearings after poll
+{"known":2,"checked":0,"unmeasured":1,"complete":false,"proven_clear":false}
+--- human Bearings text (contributions lines)
+contributions: 
+  scope: owned contributions per home
+  unmeasured_homes: 0
+  unmeasured: 1
+  gh,Contribution,"-","-",(main),null

@@ -1,0 +1,24 @@
+=== [BASE 5838f10] task delivery pr=https://gerrit.example.com/c/team/apps/widget/+/12345
+--- fm-bearings-snapshot.sh --json | .contributions
+{"known":0,"checked":0,"unmeasured":0,"counts":{"captain":0,"fleet":0,"maintainer":0,"nobody":0},"complete":true,"proven_clear":true}
+--- fm-fleet-snapshot.sh --contribution-input | fm-contributions.sh snapshot --all
+{"known":0,"checked":0,"unmeasured":0,"counts":{"captain":0,"fleet":0,"maintainer":0,"nobody":0},"rows":[]}
+--- fm-contributions.sh poll (exit + output)
+exit=0 output=[]
+contributions.json written: no
+=== [TARGET c34ac01] task delivery pr=https://gerrit.example.com/c/team/apps/widget/+/12345
+--- fm-bearings-snapshot.sh --json | .contributions
+{"known":1,"checked":0,"unmeasured":1,"counts":{"captain":0,"fleet":0,"maintainer":0,"nobody":0},"complete":false,"proven_clear":false}
+--- fm-fleet-snapshot.sh --contribution-input | fm-contributions.sh snapshot --all
+{"known":1,"checked":0,"unmeasured":1,"counts":{"captain":0,"fleet":0,"maintainer":0,"nobody":0},"rows":[{"task":"delivery","url":"https://gerrit.example.com/c/team/apps/widget/+/12345","actor":"unmeasured","reason":"unsupported forge; coverage is unmeasured"}]}
+--- fm-contributions.sh poll (exit + output)
+exit=0 output=[]
+contributions.json written: no
+=== [TARGET c34ac01 GitLab reference] task delivery pr=https://gitlab.com/o/r/-/merge_requests/2
+--- fm-bearings-snapshot.sh --json | .contributions
+{"known":1,"checked":0,"unmeasured":1,"counts":{"captain":0,"fleet":0,"maintainer":0,"nobody":0},"complete":false,"proven_clear":false}
+--- fm-fleet-snapshot.sh --contribution-input | fm-contributions.sh snapshot --all
+{"known":1,"checked":0,"unmeasured":1,"counts":{"captain":0,"fleet":0,"maintainer":0,"nobody":0},"rows":[{"task":"delivery","url":"https://gitlab.com/o/r/-/merge_requests/2","actor":"unmeasured","reason":"unsupported forge; coverage is unmeasured"}]}
+--- fm-contributions.sh poll (exit + output)
+exit=1 output=[/home/jthien/.no-mistakes/worktrees/153164a827ab/01M48MD886T3F8PST66299D894/bin/fm-contributions.sh: line 400: BUDGET_EXHAUSTED: unbound variable]
+contributions.json written: no

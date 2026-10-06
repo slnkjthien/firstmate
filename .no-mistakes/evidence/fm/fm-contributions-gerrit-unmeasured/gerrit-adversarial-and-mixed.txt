@@ -1,0 +1,21 @@
+Adversarial pr= values through fm-fleet-snapshot.sh --contribution-input | fm-contributions.sh snapshot (target c34ac01)
+https://gerrit.example.com/c/team/apps/widget/+/12345                       fm_pr_url_parse=accepted snapshot={"known":1,"unmeasured":1,"actor":"unmeasured"}
+https://gerrit.example.com/c/team/apps/widget/+/12345/2                     fm_pr_url_parse=rejected snapshot={"known":0,"unmeasured":0,"actor":null}
+https://gerrit.example.com/c/widget/+/1                                     fm_pr_url_parse=accepted snapshot={"known":1,"unmeasured":1,"actor":"unmeasured"}
+https://github.com/c/team/widget/+/12345                                    fm_pr_url_parse=rejected snapshot={"known":0,"unmeasured":0,"actor":null}
+https://Gerrit.Example.com/c/team/widget/+/12345                            fm_pr_url_parse=rejected snapshot={"known":0,"unmeasured":0,"actor":null}
+https://gerrit.example.com/c/team/../widget/+/12345                         fm_pr_url_parse=rejected snapshot={"known":0,"unmeasured":0,"actor":null}
+https://gerrit.example.com/c/team/widget.git/+/12345                        fm_pr_url_parse=rejected snapshot={"known":0,"unmeasured":0,"actor":null}
+https://gerrit.example.com/c/team/-widget/+/12345                           fm_pr_url_parse=rejected snapshot={"known":0,"unmeasured":0,"actor":null}
+https://gerrit.example.com/c/team/widget/+/0                                fm_pr_url_parse=rejected snapshot={"known":0,"unmeasured":0,"actor":null}
+http://gerrit.example.com/c/team/widget/+/12345                             fm_pr_url_parse=rejected snapshot={"known":0,"unmeasured":0,"actor":null}
+https://gerrit.example.com/c/team/widget/+/12345#message                    fm_pr_url_parse=rejected snapshot={"known":0,"unmeasured":0,"actor":null}
+https://gerrit.example.com/c/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/w/+/1 fm_pr_url_parse=rejected snapshot={"known":0,"unmeasured":0,"actor":null}
+
+Mixed: Gerrit pr= on task 'delivery' + GitHub PR on backlog row 'gh' -> poll must still attempt the GitHub read and never the Gerrit one
+{"known":1,"checked":0,"unmeasured":1,"complete":false,"proven_clear":false}
+poll exit=0 output=[]
+gh calls:
+sed: can't read /tmp/fm-lab.5pMf8q/gh.log: No such file or directory
+ugrep: warning: /tmp/fm-lab.5pMf8q/gh.log: No such file or directory
+any gerrit in gh calls: 
