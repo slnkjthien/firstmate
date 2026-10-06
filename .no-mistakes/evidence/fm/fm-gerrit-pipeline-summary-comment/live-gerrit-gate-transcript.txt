@@ -1,0 +1,91 @@
+### Lab: disposable Gerrit 3.10.3 container (localhost:18080, ssh 29419), real gerrit-axi 0.5.0
+### Worker copy: two commits (original + no-mistakes(review) fix) published as change 1 by 'gerrit-axi publish --squash'
+### Only 'no-mistakes axi status' is stubbed (run 01LABRUN, outcome passed, custody returned); gate = firstmate fm_dod_accept_ship_done from the worktree
+
+### S0: no summary posted yet -> ready report refused
+no pipeline summary message is on patch set 1 of https://localhost/c/demo/+/1: no change message on the current patch set carries the first line 'no-mistakes pipeline summary for run 01LABRUN' and an entry line for each step that reported findings: lint
+[gate exit 1]
+
+### S1: worker pipes the summary on stdin (no file) to 'gerrit-axi message 1 --json'
+{
+  "ok": true,
+  "op": "message",
+  "change": 1,
+  "patch_set": 1,
+  "revision": "9cc92ad7bbb9b7ff1053011ad84c48fcb247c94c",
+  "project": "demo",
+  "branch": "master",
+  "subject": "Document the value",
+  "url": "http://localhost:18080/c/demo/+/1",
+  "chars": 163,
+  "help": [
+    "Run `gerrit-axi show 1 --messages all` for the conversation including this message"
+  ]
+}
+
+### S1b: server view (REST): messages on change 1, and any non-zero votes
+{"rev":1,"message":"Uploaded patch set 1."}
+{"rev":1,"message":"Patch Set 1:\n\nno-mistakes pipeline summary for run 01LABRUN\n\nreview: documented value was wrong - corrected to 'fixed'\nlint: trailing whitespace in doc - left unfixed (cosmetic)"}
+{"nonzero_votes":{"Code-Review":[]}}
+
+### S2: ready report naming patch set 1 (lint still reports findings) -> accepted
+[gate exit 0]
+
+### S3: same report without the '; pipeline summary posted on patch set N' suffix -> refused
+the ready report does not name the patch set its pipeline summary was posted on: end it with '; pipeline summary posted on patch set 1'
+[gate exit 1]
+
+### S3b: report naming the wrong patch set (2) -> refused
+the ready report names the pipeline summary on patch set 2, but https://localhost/c/demo/+/1's current patch set is 1
+[gate exit 1]
+
+### S3c: the run is a different run (id OTHERRUN) than the message names -> refused
+no pipeline summary message is on patch set 1 of https://localhost/c/demo/+/1: no change message on the current patch set carries the first line 'no-mistakes pipeline summary for run OTHERRUN' and an entry line for each step that reported findings: lint
+[gate exit 1]
+
+### S3d: step 'test' reports findings but the message has no 'test:' entry -> refused
+no pipeline summary message is on patch set 1 of https://localhost/c/demo/+/1: no change message on the current patch set carries the first line 'no-mistakes pipeline summary for run 01LABRUN' and an entry line for each step that reported findings: test, lint
+[gate exit 1]
+
+### S5 (r5): every step shows 0 findings left (all auto-fixed); message has a 'review:' entry and no 'no findings' line -> accepted
+[gate exit 0]
+
+### S4: worker republishes after posting (new commit, 'gerrit-axi publish --squash') -> patch set 2
+{"ok":true,"change":1,"patch_set":2}
+### S4a: summary sits only on patch set 1; report naming patch set 1 -> refused
+no pipeline summary message is on patch set 2 of https://localhost/c/demo/+/1: no change message on the current patch set carries the first line 'no-mistakes pipeline summary for run 01LABRUN' and an entry line for each step that reported findings: lint
+[gate exit 1]
+### S4b: worker posts a fresh summary on patch set 2 via stdin, report names patch set 2 -> accepted
+{"ok":true,"change":1,"patch_set":2}
+[gate exit 0]
+
+### S6: republish -> patch set 3; post marker-only and header-only messages (no 'no findings', no '<step>:' entry); all steps 0 findings
+{"ok":true,"change":1,"patch_set":3}
+{"ok":true,"patch_set":3}
+{"ok":true,"patch_set":3}
+### S6a (r6): gate refuses, naming the 'no findings' or '<step>:' requirement
+no pipeline summary message is on patch set 3 of https://localhost/c/demo/+/1: no change message on the current patch set carries the first line 'no-mistakes pipeline summary for run 01LABRUN' and the line 'no findings' or a '<step>:' entry line
+[gate exit 1]
+### S6b: worker adds a 'no findings' summary on patch set 3 -> accepted
+{"ok":true,"patch_set":3}
+[gate exit 0]
+
+### S7 (--full): republish -> patch set 4; post a ~1300-char summary whose required 'lint:' line is past char 1000
+{"ok":true,"change":1,"patch_set":4}
+{"ok":true,"patch_set":4,"chars":1303}
+### S7a: without --full gerrit-axi truncates the body (shown for contrast): truncated=[false,true]
+### S7b: gate (reads with --full) accepts the report
+[gate exit 0]
+
+### Final server view: messages per patch set
+{"rev":1,"first":"Uploaded patch set 1."}
+{"rev":1,"first":"Patch Set 1: /  / no-mistakes pipeline summary for run 01LABRUN"}
+{"rev":2,"first":"Uploaded patch set 2."}
+{"rev":2,"first":"Patch Set 2: /  / no-mistakes pipeline summary for run 01LABRUN"}
+{"rev":3,"first":"Uploaded patch set 3."}
+{"rev":3,"first":"Patch Set 3: /  / no-mistakes pipeline summary"}
+{"rev":3,"first":"Patch Set 3: /  / no-mistakes pipeline summary for run 01LABRUN"}
+{"rev":3,"first":"Patch Set 3: /  / no-mistakes pipeline summary for run 01LABRUN"}
+{"rev":4,"first":"Uploaded patch set 4."}
+{"rev":4,"first":"Patch Set 4: /  / no-mistakes pipeline summary for run 01LABRUN"}
+{"nonzero_votes":{"Code-Review":[]}}

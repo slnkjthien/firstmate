@@ -1,0 +1,13 @@
+### Lab FM_HOME (fm-lab-home.sh), project proj registered [no-mistakes forge=gerrit]
+brief scaffolded
+
+### fm-spawn.sh cap-s1 with real gerrit-axi 0.2.0 first on PATH (gerrit-axi 0.2.0)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.HMw3PZ
+error: fm-spawn.sh cap-s1: a no-mistakes ship to a Gerrit project posts its pipeline summary with `gerrit-axi message`, which the installed gerrit-axi does not support; install gerrit-axi 0.3.0 or later
+[exit 1] task meta recorded: no
+
+### fm-spawn.sh cap-s1 with real gerrit-axi 0.3.0 first on PATH (0.3.0)
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.HMw3PZ
+spawned cap-s1 harness=claude kind=ship mode=no-mistakes yolo=off window=firstmate:fm-cap-s1 worktree=/home/jthien/.treehouse/proj-7a2380/1/proj
+[exit 0] task meta recorded: yes
+### cleanup: 0.3.0 spawn launched an idle lab worker; torn down with fm-teardown.sh --force, lab tmux server killed, lab home and its treehouse pool removed
