@@ -1,0 +1,24 @@
+=== base (/tmp/fm-base.Udb7YH/wt) LAB=/tmp/fm-lab.TvJ0fz
+--- bearings --json .contributions
+{"known":0,"checked":0,"unmeasured":0,"counts":{"captain":0,"fleet":0,"maintainer":0,"nobody":0},"complete":true,"proven_clear":true}
+--- bearings human
+contributions: 
+  scope: owned contributions per home
+  known: 0
+  checked: 0
+  counts: 
+    captain: 0
+    fleet: 0
+    maintainer: 0
+=== target (/home/jthien/.no-mistakes/worktrees/153164a827ab/01M619S8FET9S72MCYR9YH7W34) LAB=/tmp/fm-lab.6lYuyZ
+--- bearings --json .contributions
+{"known":1,"checked":0,"unmeasured":1,"counts":{"captain":0,"fleet":0,"maintainer":0,"nobody":0},"complete":false,"proven_clear":false}
+--- bearings human
+contributions: 
+  scope: owned contributions per home
+  known: 1
+  checked: 0
+  counts: 
+    captain: 0
+    fleet: 0
+    maintainer: 0

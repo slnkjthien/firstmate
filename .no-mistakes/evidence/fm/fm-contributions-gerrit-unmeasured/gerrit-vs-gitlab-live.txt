@@ -1,0 +1,115 @@
+### Lab home: Gerrit pr= on task 'widget', Gerrit link on backlog row 'gerrit-row', GitLab MR pr= on task 'glab'
+### fm-fleet-snapshot.sh --contribution-input | fm-contributions.sh snapshot - --all
+{
+  "known": 3,
+  "checked": 0,
+  "counts": {
+    "captain": 0,
+    "fleet": 0,
+    "maintainer": 0,
+    "nobody": 0
+  },
+  "unmeasured": 3,
+  "complete": false,
+  "proven_clear": false,
+  "stale_verdicts": 0,
+  "missing_verdicts": 0,
+  "unreadable_records": 0,
+  "valid_until": 900,
+  "captain": [],
+  "captain_omitted": 0,
+  "rows": [
+    {
+      "task": "gerrit-row",
+      "url": "https://gerrit.example.com/c/team/apps/other/+/777",
+      "kind": "pr",
+      "checked_at": null,
+      "checked": false,
+      "final": false,
+      "head": null,
+      "verdict": null,
+      "reviews": [],
+      "distinct_checks": 0,
+      "missing_verdicts": 0,
+      "pending_checks": 0,
+      "failed_checks": 0,
+      "stale_verdicts": 0,
+      "signals": [],
+      "actor": "unmeasured",
+      "reason": "unsupported forge; coverage is unmeasured",
+      "tasks": [
+        "gerrit-row"
+      ]
+    },
+    {
+      "task": "widget",
+      "url": "https://gerrit.example.com/c/team/apps/widget/+/12345",
+      "kind": "pr",
+      "checked_at": null,
+      "checked": false,
+      "final": false,
+      "head": null,
+      "verdict": null,
+      "reviews": [],
+      "distinct_checks": 0,
+      "missing_verdicts": 0,
+      "pending_checks": 0,
+      "failed_checks": 0,
+      "stale_verdicts": 0,
+      "signals": [],
+      "actor": "unmeasured",
+      "reason": "unsupported forge; coverage is unmeasured",
+      "tasks": [
+        "widget"
+      ]
+    },
+    {
+      "task": "glab",
+      "url": "https://gitlab.com/o/r/-/merge_requests/2",
+      "kind": "pr",
+      "checked_at": null,
+      "checked": false,
+      "final": false,
+      "head": null,
+      "verdict": null,
+      "reviews": [],
+      "distinct_checks": 0,
+      "missing_verdicts": 0,
+      "pending_checks": 0,
+      "failed_checks": 0,
+      "stale_verdicts": 0,
+      "signals": [],
+      "actor": "unmeasured",
+      "reason": "unsupported forge; coverage is unmeasured",
+      "tasks": [
+        "glab"
+      ]
+    }
+  ]
+}
+### fm-bearings-snapshot.sh --json .contributions
+{
+  "scope": "owned contributions per home",
+  "known": 3,
+  "checked": 0,
+  "counts": {
+    "captain": 0,
+    "fleet": 0,
+    "maintainer": 0,
+    "nobody": 0
+  },
+  "complete": false,
+  "proven_clear": false,
+  "unmeasured_homes": 0,
+  "unreadable_records": 0,
+  "unmeasured": 3,
+  "stale_verdicts": 0,
+  "missing_verdicts": 0,
+  "captain_omitted": 0,
+  "captain": []
+}
+### fm-contributions.sh poll (gh stub prints UNEXPECTED on any call)
+poll rc=0
+### contributions.json files after poll:
+### fm-contributions.sh owned
+[]
